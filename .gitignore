@@ -1,0 +1,18 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.o
+*.lst
+*.map
+
+# Compiled Static libraries
+*.a
+
+# Executables
+*.elf
+*.rpx
+
+# Editor files
+.vscode
+*.kate-swp
