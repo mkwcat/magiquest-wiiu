@@ -5,6 +5,7 @@
 
 #include "System.hpp"
 #include "AudioMgr.hpp"
+#include "Exception.hpp"
 #include <cassert>
 #include <cstdlib>
 #include <gui/memory.h>
@@ -341,11 +342,12 @@ extern "C" void abort()
 int main(int argc, char** argv)
 {
     WHBProcInit();
-    WHBInitCrashHandler();
     WHBLogCafeInit();
 #if CONF_LOG_MASK != 0
     WHBLogUdpInit();
 #endif
+
+    Exception::Init();
 
     libgui_memoryInitialize();
 
