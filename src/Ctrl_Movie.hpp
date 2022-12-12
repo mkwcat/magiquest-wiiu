@@ -86,6 +86,38 @@ public:
     void SetOnFrameHandler(std::function<void(Ctrl_Movie*, u32)> handler);
 
 private:
+    class DecoderThread : public CThread
+    {
+    public:
+        DecoderThread()
+          : CThread(CThread::eAttributeNone, 16, 0x10000)
+        {
+        }
+
+        DecoderThread(s32 priority)
+          : CThread(CThread::eAttributeNone, priority, 0x10000)
+        {
+        }
+
+        void Run(std::function<void()> entry)
+        {
+            m_entry = entry;
+            resumeThread();
+        }
+
+        void executeThread() override
+        {
+            m_entry();
+        }
+
+    private:
+        std::function<void()> m_entry;
+    };
+
+    DecoderThread m_videoThread{20};
+    DecoderThread m_videoNV12Thread{10};
+    DecoderThread m_audioThread{1};
+
     /**
      * Left audio voice.
      */
@@ -124,23 +156,26 @@ private:
     void* m_savedImageData;
 
     static constexpr u32 FrameBufferCount = 4;
+    static constexpr u32 FBQueueCount = 8;
 
     std::unique_ptr<u8> m_fbData;
     std::unique_ptr<u8> m_fbNv12Data;
 
-    OSMessage m_fbInMsg[FrameBufferCount];
+    OSMessage m_fbInMsg[FBQueueCount];
     OSMessageQueue m_fbInQueue;
-    OSMessage m_fbNv12Msg[FrameBufferCount];
+    OSMessage m_fbNv12Msg[FBQueueCount];
     OSMessageQueue m_fbNv12Queue;
-    OSMessage m_fbOutMsg[FrameBufferCount];
+    OSMessage m_fbOutMsg[FBQueueCount];
     OSMessageQueue m_fbOutQueue;
 
     enum class CtrlCmd {
         ChangeMovie,
+        Shutdown,
     };
 
     enum class AudioCtrlCmd {
         ChangeAudio,
+        Shutdown,
     };
 
     OSMessage m_ctrlMsg[8];
@@ -160,6 +195,8 @@ private:
 
     class Decoder
     {
+        friend class Ctrl_Movie;
+
         /**
          * Parent class.
          */
@@ -277,38 +314,7 @@ private:
         u32 m_audioBufferSize;
     };
 
-    class DecoderThread : public CThread
-    {
-    public:
-        DecoderThread()
-          : CThread(CThread::eAttributeNone, 16, 0x10000)
-        {
-        }
-
-        DecoderThread(s32 priority)
-          : CThread(CThread::eAttributeNone, priority, 0x10000)
-        {
-        }
-
-        void Run(std::function<void()> entry)
-        {
-            m_entry = entry;
-            resumeThread();
-        }
-
-        void executeThread() override
-        {
-            m_entry();
-        }
-
-    private:
-        std::function<void()> m_entry;
-    };
-
     Decoder m_decoder;
-    DecoderThread m_videoThread{20};
-    DecoderThread m_videoNV12Thread{10};
-    DecoderThread m_audioThread{1};
 
     OSMutex m_fileMutex;
 

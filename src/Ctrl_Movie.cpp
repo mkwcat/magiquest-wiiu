@@ -44,11 +44,11 @@ Ctrl_Movie::Ctrl_Movie()
   , m_decoder(this, 100, 40, MaxWidth, MaxHeight)
 {
     OSInitMessageQueueEx(
-      &m_fbInQueue, m_fbInMsg, FrameBufferCount, "Ctrl_Movie::m_fbInQueue");
-    OSInitMessageQueueEx(&m_fbNv12Queue, m_fbNv12Msg, FrameBufferCount,
-      "Ctrl_Movie::m_fbNv12Queue");
+      &m_fbInQueue, m_fbInMsg, FBQueueCount, "Ctrl_Movie::m_fbInQueue");
     OSInitMessageQueueEx(
-      &m_fbOutQueue, m_fbOutMsg, FrameBufferCount, "Ctrl_Movie::m_fbOutQueue");
+      &m_fbNv12Queue, m_fbNv12Msg, FBQueueCount, "Ctrl_Movie::m_fbNv12Queue");
+    OSInitMessageQueueEx(
+      &m_fbOutQueue, m_fbOutMsg, FBQueueCount, "Ctrl_Movie::m_fbOutQueue");
     OSInitMessageQueueEx(&m_ctrlQueue, m_ctrlMsg, 8, "Ctrl_Movie::m_ctrlQueue");
     OSInitMessageQueueEx(
       &m_audioCtrlQueue, m_audioCtrlMsg, 8, "Ctrl_Movie::m_audioCtrlQueue");
@@ -162,6 +162,49 @@ Ctrl_Movie::Ctrl_Movie(const char* path)
 
 Ctrl_Movie::~Ctrl_Movie()
 {
+    OSMessage msg = {
+      .message = nullptr,
+      .args =
+        {
+          [0] = u32(CtrlCmd::Shutdown),
+        },
+    };
+
+    auto ret = OSSendMessage(&m_ctrlQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
+    assert(ret);
+
+    msg = {
+      .message = nullptr,
+      .args = {},
+    };
+    // An empty framebuffer in queue can block the video thread
+    OSSendMessage(&m_fbInQueue, &msg, OS_MESSAGE_FLAGS_NONE);
+
+    msg = {
+      .message = nullptr,
+      .args =
+        {
+          [0] = u32(AudioCtrlCmd::Shutdown),
+        },
+    };
+
+    ret = OSSendMessage(&m_audioCtrlQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
+    assert(ret);
+
+    msg = {
+      .message = nullptr,
+      .args = {},
+    };
+
+    ret = OSSendMessage(&m_fbNv12Queue, &msg,
+      OSMessageFlags(
+        OS_MESSAGE_FLAGS_BLOCKING | OS_MESSAGE_FLAGS_HIGH_PRIORITY));
+    assert(ret);
+
+    m_videoThread.shutdownThread();
+    m_videoNV12Thread.shutdownThread();
+    m_audioThread.shutdownThread();
+
     // Restore the original data so GuiImageData can free it
     auto tex = const_cast<GX2Texture*>(m_imageData.getTexture());
     if (tex != nullptr) {
@@ -253,8 +296,6 @@ void Ctrl_Movie::VideoDecodeProc()
             assert(ret);
         }
 
-        assert(fbMsg.message != nullptr);
-
         // Check for a control message before decoding. If the stream has ended
         // then this is blocking
         if (OSReceiveMessage(&m_ctrlQueue, &ctrlMsg,
@@ -269,10 +310,16 @@ void Ctrl_Movie::VideoDecodeProc()
                 noStream = false;
                 break;
 
+            case CtrlCmd::Shutdown:
+                LOG(LogMP4, "Exit video decode");
+                return;
+
             default:
                 assert(!"Received invalid control command");
             }
         }
+
+        assert(fbMsg.message != nullptr);
 
         if (m_streamEnded || !m_decoder.DecodeFrame((u8*) fbMsg.args[0],
                                (u8*) fbMsg.message, &m_fbNv12Queue)) {
@@ -298,6 +345,11 @@ void Ctrl_Movie::VideoYUV2RGBProc()
         auto ret =
           OSReceiveMessage(&m_fbNv12Queue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
         assert(ret);
+
+        if (msg.message == nullptr) {
+            LOG(LogMP4, "Exit video NV12 decode");
+            return;
+        }
 
         // Width, Height
         if (msg.args[1] == 0) {
@@ -366,6 +418,10 @@ void Ctrl_Movie::AudioDecodeProc()
                 marker++;
                 noAudioStream = false;
                 break;
+
+            case AudioCtrlCmd::Shutdown:
+                LOG(LogMP4, "Exit audio decode");
+                return;
 
             default:
                 assert(!"Received invalid control command");
@@ -492,6 +548,9 @@ Ctrl_Movie::Decoder::Decoder(
 
 Ctrl_Movie::Decoder::~Decoder()
 {
+    if (m_file != nullptr) {
+        CloseMovie();
+    }
 }
 
 const ov_callbacks Ctrl_Movie::Decoder::s_oggCallbacks = {

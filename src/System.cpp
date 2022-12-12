@@ -86,6 +86,11 @@ System::System()
 
 System::~System()
 {
+    for (auto set : m_pages) {
+        delete set.element;
+        set.element = nullptr;
+    }
+
     if (s_instance == this) {
         s_instance = nullptr;
     }
@@ -98,6 +103,7 @@ System::~System()
 void System::Start()
 {
     resumeThread();
+    // This will wait until the thread exits.
     shutdownThread();
 }
 
