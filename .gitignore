@@ -12,6 +12,11 @@
 # Executables
 *.elf
 *.rpx
+*.wuhb
+
+# Data files
+content
+meta
 
 # Editor files
 .vscode

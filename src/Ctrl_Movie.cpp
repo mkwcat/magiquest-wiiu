@@ -5,6 +5,7 @@
 
 #include "Ctrl_Movie.hpp"
 #include "AudioMgr.hpp"
+#include "System.hpp"
 #include "yuv2rgb.h"
 #include <algorithm>
 #include <cassert>
@@ -115,7 +116,7 @@ Ctrl_Movie::Ctrl_Movie()
 
     // Create a large audio buffer and then split it up into multiple parts for
     // each voice queue.
-    m_audioBufferSize = 32000;
+    m_audioBufferSize = 16000;
     const u32 audioBufferCount = 4;
 
     m_audioData = std::unique_ptr<u16>(new (std::align_val_t(256))
@@ -191,6 +192,19 @@ Ctrl_Movie::~Ctrl_Movie()
     ret = OSSendMessage(&m_audioCtrlQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
     assert(ret);
 
+    auto ax = AudioMgr::s_instance;
+
+    ax->FreeVoice(m_voiceL);
+    ax->FreeVoice(m_voiceR);
+
+    msg = {
+      .message = nullptr,
+      .args = {},
+    };
+    // Just a measure to prevent this from blocking the audio thread
+    OSSendMessage(&m_voiceLReturnQueue, &msg, OS_MESSAGE_FLAGS_NONE);
+    OSSendMessage(&m_voiceRReturnQueue, &msg, OS_MESSAGE_FLAGS_NONE);
+
     msg = {
       .message = nullptr,
       .args = {},
@@ -214,14 +228,14 @@ Ctrl_Movie::~Ctrl_Movie()
 
 void Ctrl_Movie::process()
 {
-    static int frameThing = 0;
-    frameThing ^= 1;
     static u32 curNv12 = 0;
+    static int marker = 1;
 
     OSMessage msg = {};
 
-    if (frameThing != 0)
+    if ((System::s_instance->GetFrameID() % 2) == 0) {
         return;
+    }
 
     if (!OSReceiveMessage(&m_fbOutQueue, &msg, OS_MESSAGE_FLAGS_NONE)) {
         LOG(LogMP4, "Missed frame");
@@ -233,7 +247,6 @@ void Ctrl_Movie::process()
     u32 frameId = msg.args[2];
 
     if (frameId == 0) {
-        static int marker = 1;
         AudioMgr::s_instance->ChangeMarker(m_voiceL, marker);
         AudioMgr::s_instance->ChangeMarker(m_voiceR, marker);
         marker++;
@@ -549,7 +562,7 @@ Ctrl_Movie::Decoder::Decoder(
 Ctrl_Movie::Decoder::~Decoder()
 {
     if (m_file != nullptr) {
-        CloseMovie();
+        // CloseMovie();
     }
 }
 

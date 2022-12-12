@@ -15,8 +15,9 @@
 #include <gui/GuiImageData.h>
 #include <gui/VPadController.h>
 #include <gui/system/CThread.h>
-#include <gui/video/CVideo.h>
 #include <vector>
+
+class CVideo;
 
 class System : public CThread
 {
@@ -52,10 +53,18 @@ public:
 
     void Start();
 
+    static u32 CallbackAcquire(void* context);
+    static u32 CallbackRelease(void* context);
+
     /**
      * Load an entire file into memory.
      */
-    void* RipFile(const char* path, u32* length = nullptr);
+    static void* RipFile(const char* path, u32* length = nullptr);
+
+    /**
+     * Returns true if the current environment is aroma.
+     */
+    static bool IsAroma();
 
     /**
      * Enable a page on the specified display.
@@ -145,12 +154,20 @@ public:
     Wand* GetWand();
 
     /**
+     * Get the current frame ID.
+     */
+    u32 GetFrameID() const
+    {
+        return m_frameId;
+    }
+
+    /**
      * Thread entry point.
      */
     void executeThread() override;
 
 protected:
-    CVideo m_video;
+    CVideo* m_video;
 
     VPadController m_gamepad;
 
@@ -160,4 +177,6 @@ protected:
     Wand m_wand;
 
     PageSetting m_pages[PageCount];
+
+    u32 m_frameId;
 };

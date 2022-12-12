@@ -7,10 +7,14 @@
 #include "AudioMgr.hpp"
 #include "Exception.hpp"
 #include <cassert>
+#include <coreinit/core.h>
+#include <coreinit/dynload.h>
 #include <cstdlib>
 #include <gui/memory.h>
 #include <gui/sounds/SoundHandler.hpp>
+#include <gui/video/CVideo.h>
 #include <padscore/kpad.h>
+#include <proc_ui/procui.h>
 #include <whb/crash.h>
 #include <whb/proc.h>
 
@@ -31,7 +35,7 @@ System* System::s_instance = nullptr;
 System::System()
   : CThread(
       CThread::eAttributeAffCore1 | CThread::eAttributePinnedAff, 0, 0x80000)
-  , m_video(GX2_TV_SCAN_MODE_1080P)
+  , m_video(new CVideo(GX2_TV_SCAN_MODE_1080P))
   , m_gamepad(GuiTrigger::CHANNEL_1)
   , m_imgCursor(nullptr)
   , m_pages{
@@ -66,7 +70,6 @@ System::System()
         .element = new Page_TouchDuel(),
       },
     }
-
 {
     if (s_instance == nullptr) {
         s_instance = this;
@@ -75,10 +78,11 @@ System::System()
     LOG(LogSystem, "Starting application");
 
     m_imgCursorTimer = 0;
+    m_frameId = 0;
 
     // Disable display
-    m_video.tvEnable(false);
-    m_video.drcEnable(false);
+    m_video->tvEnable(false);
+    m_video->drcEnable(false);
 
     // Enable Wii remotes
     KPADInit();
@@ -120,9 +124,42 @@ void System::executeThread()
       GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
     m_imgCursor.setImageData(&m_imgCursorData);
 
+    ProcUIRegisterCallback(
+      PROCUI_CALLBACK_ACQUIRE, CallbackAcquire, nullptr, 100);
+    ProcUIRegisterCallback(
+      PROCUI_CALLBACK_RELEASE, CallbackRelease, nullptr, 100);
+
     while (Tick()) {
         WaitVSync();
+
+        m_frameId++;
+
+        if (!WHBProcIsRunning()) {
+            if (m_video != nullptr) {
+                m_video->tvEnable(false);
+                m_video->drcEnable(false);
+            }
+        }
     }
+}
+
+u32 System::CallbackAcquire(void* context)
+{
+    if (s_instance->m_video == nullptr) {
+        libgui_memoryInitialize();
+        s_instance->m_video = new CVideo(GX2_TV_SCAN_MODE_1080P);
+    }
+
+    return 0;
+}
+
+u32 System::CallbackRelease(void* context)
+{
+    delete s_instance->m_video;
+    s_instance->m_video = nullptr;
+    libgui_memoryRelease();
+
+    return 0;
 }
 
 void* System::RipFile(const char* path, u32* length)
@@ -153,6 +190,22 @@ void* System::RipFile(const char* path, u32* length)
         *length = filesize;
 
     return data;
+}
+
+bool System::IsAroma()
+{
+    static bool checked = false;
+    static bool aroma = false;
+
+    if (!checked) {
+        checked = true;
+        OSDynLoad_Module mod;
+        aroma = OSDynLoad_Acquire("homebrew_kernel", &mod) == OS_DYNLOAD_OK;
+        if (aroma)
+            OSDynLoad_Release(mod);
+    }
+
+    return aroma;
 }
 
 void System::ShowPage(PageID page, Display display)
@@ -209,6 +262,8 @@ GuiElement* System::GetPage(PageID page)
 
 bool System::Tick()
 {
+    assert(m_video != nullptr);
+
     float curX, curY, curZ;
 
     bool curValid;
@@ -229,7 +284,8 @@ bool System::Tick()
         }
     }
 
-    bool update = m_gamepad.update(m_video.getTvWidth(), m_video.getTvHeight());
+    bool update =
+      m_gamepad.update(m_video->getTvWidth(), m_video->getTvHeight());
 
     for (auto set : m_pages) {
         set.element->process();
@@ -241,49 +297,37 @@ bool System::Tick()
 
     m_imgCursor.process();
 
-    m_video.prepareDrcRendering();
+    m_video->prepareDrcRendering();
     for (auto set : m_pages) {
         if (set.drc) {
-            set.element->draw(&m_video);
+            set.element->draw(m_video);
         }
     }
 
     if (m_imgCursorTimer-- <= 0) {
         m_imgCursorTimer = 0;
     } else {
-        m_imgCursor.draw(&m_video);
+        m_imgCursor.draw(m_video);
     }
-    m_video.drcDrawDone();
+    m_video->drcDrawDone();
 
-    m_video.prepareTvRendering();
+    m_video->prepareTvRendering();
     for (auto set : m_pages) {
         if (set.tv) {
-            set.element->draw(&m_video);
+            set.element->draw(m_video);
         }
     }
-    m_video.tvDrawDone();
+    m_video->tvDrawDone();
 
-    // Show display after first frame
-    static bool displayEnabled = false;
-    if (!displayEnabled) {
-        displayEnabled = true;
-        LOG(LogSystem, "Showing display");
-        m_video.tvEnable(true);
-        m_video.drcEnable(true);
-    }
-
-    if (!WHBProcIsRunning()) {
-        m_video.tvEnable(false);
-        m_video.drcEnable(false);
-        return false;
-    }
+    m_video->tvEnable(true);
+    m_video->drcEnable(true);
 
     return true;
 }
 
 void System::WaitVSync()
 {
-    m_video.waitForVSync();
+    m_video->waitForVSync();
 }
 
 Wand* System::GetWand()
