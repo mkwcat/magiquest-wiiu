@@ -80,6 +80,11 @@ public:
     virtual const char* NextMovie() override;
 
     /**
+     * NextFrame from Encounter.
+     */
+    virtual void NextFrame(u32 frame) override;
+
+    /**
      * Cast from WandHandler.
      */
     virtual void Cast(Wand::CastMode castMode, bool curValid, float curX,

@@ -27,6 +27,14 @@ Page_Movie::Page_Movie()
         m_movie.ChangeMovie(nextMovie);
     });
 
+    m_movie.SetOnFrameHandler([&](Ctrl_Movie* movie, u32 frame) {
+        Lock lock(m_mutex);
+        if (m_encounter == nullptr)
+            return;
+
+        m_encounter->NextFrame(frame);
+    });
+
     append(&m_movie);
 
     for (u32 i = 0; i < 17; i++) {

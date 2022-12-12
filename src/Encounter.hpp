@@ -22,6 +22,13 @@ public:
      */
     virtual const char* NextMovie() = 0;
 
+    /**
+     * Called each time a frame is rendered in the movie stream.
+     */
+    virtual void NextFrame(u32 frame)
+    {
+    }
+
 private:
     u8 m_manaLeft = 0;
     u8 m_manaRight = 0;

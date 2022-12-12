@@ -62,13 +62,23 @@ private:
     /**
      * Called when the stream ends.
      */
-    std::function<void(Ctrl_Movie*)> m_onEndHandler;
+    std::function<void(Ctrl_Movie*)> m_onEndHandler = nullptr;
+
+    /**
+     * Called every frame.
+     */
+    std::function<void(Ctrl_Movie*, u32)> m_onFrameHandler = nullptr;
 
 public:
     /**
      * Set the function to call when the stream ends.
      */
     void SetOnEndHandler(std::function<void(Ctrl_Movie*)> handler);
+
+    /**
+     * Set the function to call every frame.
+     */
+    void SetOnFrameHandler(std::function<void(Ctrl_Movie*, u32)> handler);
 
 private:
     /**

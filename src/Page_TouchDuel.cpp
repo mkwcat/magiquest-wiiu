@@ -420,6 +420,16 @@ const char* Page_TouchDuel::NextMovie()
     return m_phaseMoviePath;
 }
 
+void Page_TouchDuel::NextFrame(u32 frame)
+{
+    if (m_nextPhase != Phase::Retreat)
+        return;
+
+    if (m_castSpell != Spell::None && m_castSpell != Spell::Warrior) {
+        ForceNextMovie();
+    }
+}
+
 void Page_TouchDuel::Cast(
   Wand::CastMode castMode, bool curValid, float curX, float curY, float curZ)
 {

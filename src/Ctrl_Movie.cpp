@@ -278,7 +278,12 @@ void Ctrl_Movie::VideoDecodeProc()
         auto ret =
           OSSendMessage(&m_fbOutQueue, &fbMsg, OS_MESSAGE_FLAGS_BLOCKING);
         assert(ret);
+
         fbMsg = {};
+
+        if (m_onFrameHandler != nullptr) {
+            m_onFrameHandler(this, it);
+        }
     }
 }
 
@@ -397,6 +402,12 @@ void Ctrl_Movie::ForceEndStream()
 void Ctrl_Movie::SetOnEndHandler(std::function<void(Ctrl_Movie*)> handler)
 {
     m_onEndHandler = handler;
+}
+
+void Ctrl_Movie::SetOnFrameHandler(
+  std::function<void(Ctrl_Movie*, u32)> handler)
+{
+    m_onFrameHandler = handler;
 }
 
 Ctrl_Movie::Decoder::Decoder(
