@@ -427,7 +427,7 @@ void Page_TouchDuel::NextFrame(u32 frame)
 
     if (m_castSpell != Spell::None && m_castSpell != Spell::Warrior) {
         // Hardcoded ending frames for when Xavier is not on screen
-        for (u32 f : {96, 226, 339}) {
+        for (u32 f : {96, 225, 339}) {
             if (frame == f)
                 ForceNextMovie();
         }
