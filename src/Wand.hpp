@@ -66,5 +66,7 @@ private:
     u32 m_stillTicks = 0;
     bool m_pointedAtTV = false;
 
+    s32 m_irCountDetected = -1;
+
     CastMode m_castMode = CastMode::WiiRemoteCastRune;
 };

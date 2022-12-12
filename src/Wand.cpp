@@ -6,7 +6,26 @@
 #include "Wand.hpp"
 #include "Util.hpp"
 #include <padscore/kpad.h>
-#include <vpad/input.h>
+#include <padscore/wpad.h>
+
+// These are not defined by wut for whatever reason.
+typedef struct {
+    u16 x; // Resolution is 1024
+    u16 y; // Resolution is 768
+    u16 size;
+    u8 ID;
+    u8 pad;
+} _IRObject;
+
+typedef struct {
+    u16 buttons;
+    u16 accelX; // Resolution is 1024
+    u16 accelY; // Resolution is 1024
+    u16 accelZ; // Resolution is 1024
+    _IRObject ir[4];
+    u8 ext;
+    u8 err;
+} _WPADStatus;
 
 Wand::Wand()
 {
@@ -80,36 +99,51 @@ void Wand::Update(float* curX, float* curY, float* curZ, bool* curValid)
         m_timer--;
     }
 
-    KPADStatus data;
-
     if (m_castMode == CastMode::RealWand) {
         if (m_casted) {
             return;
         }
 
-        // Search for any IR signal from the Wii Remotes. This will be messed
-        // with by _any_ IR signal, including the sensor bar.
+        u8 rawData[0x800] alignas(32);
+        WPADExtensionType extType;
+        s32 irCnt = 0;
 
         for (int i = 0; i < 4; i++) {
-            if (KPADRead(GetChanByInt(i), &data, 1) != 1) {
-                return;
-            }
+            if (WPADProbe(GetChanByInt(i), &extType) != 0)
+                continue;
 
-            if (data.posValid != 0) {
-                m_timer = 8;
-                m_casted = true;
+            if (extType == WPAD_EXT_PRO_CONTROLLER)
+                continue;
+
+            WPADRead(GetChanByInt(i), rawData);
+
+            _WPADStatus* data = reinterpret_cast<_WPADStatus*>(rawData);
+
+            for (int j = 0; j < 4; j++) {
+                if (data->ir[j].size != 0)
+                    irCnt++;
             }
         }
 
+        // If a new IR point is introduced at all then we consider it a cast.
+        if (irCnt > m_irCountDetected && m_irCountDetected != -1) {
+            m_timer = 8;
+            m_casted = true;
+        }
+
+        m_irCountDetected = irCnt;
         return;
     }
 
+    KPADStatus data;
     if (KPADRead(GetChanByInt(0), &data, 1) != 1) {
         return;
     }
 
-    if (data.accMagnitude < 1.2 && data.accMagnitude > 0.8)
+    if (data.accMagnitude < 1.2 && data.accMagnitude > 0.8) {
         UpdateAcc(data.acc.x, data.acc.y, data.acc.z);
+    }
+
     *curValid = m_curPosValid;
     *curX = m_curPosX;
     *curY = m_curPosY;
@@ -152,8 +186,7 @@ void Wand::Update(float* curX, float* curY, float* curZ, bool* curValid)
 
     case 2:
         // Now check if the wand is still for 10 consecutive ticks until the
-        // timer is up. TODO: We could also check the IR position to see if it's
-        // actually pointing at the TV.
+        // timer is up.
         if (isStill) {
             m_stillTicks++;
             m_pointedAtTV = true;
@@ -193,4 +226,5 @@ Wand::CastMode Wand::GetCastMode() const
 void Wand::SetCastMode(CastMode mode)
 {
     m_castMode = mode;
+    m_irCountDetected = -1;
 }
