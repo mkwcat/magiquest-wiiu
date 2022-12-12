@@ -41,10 +41,12 @@ Ctrl_Movie::Ctrl_Movie()
   : m_image(nullptr)
   , m_imageData(blankImg, sizeof(blankImg), GX2_TEX_CLAMP_MODE_CLAMP,
       GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8)
-  , m_decoder(this, 100, 40, 768, 768)
+  , m_decoder(this, 100, 40, MaxWidth, MaxHeight)
 {
     OSInitMessageQueueEx(
       &m_fbInQueue, m_fbInMsg, FrameBufferCount, "Ctrl_Movie::m_fbInQueue");
+    OSInitMessageQueueEx(&m_fbNv12Queue, m_fbNv12Msg, FrameBufferCount,
+      "Ctrl_Movie::m_fbNv12Queue");
     OSInitMessageQueueEx(
       &m_fbOutQueue, m_fbOutMsg, FrameBufferCount, "Ctrl_Movie::m_fbOutQueue");
     OSInitMessageQueueEx(&m_ctrlQueue, m_ctrlMsg, 8, "Ctrl_Movie::m_ctrlQueue");
@@ -70,10 +72,18 @@ Ctrl_Movie::Ctrl_Movie()
     m_fbData = std::unique_ptr<u8>(new (std::align_val_t(256))
         u8[tempTex.surface.imageSize * FrameBufferCount]);
 
+    u32 nv12Size = MaxWidth * MaxHeight + 2 * (MaxWidth * MaxHeight);
+
+    m_fbNv12Data = std::unique_ptr<u8>(
+      new (std::align_val_t(256)) u8[nv12Size * FrameBufferCount]);
+
     for (u32 i = 0; i < FrameBufferCount; i++) {
         OSMessage msg = {
           .message = m_fbData.get() + i * tempTex.surface.imageSize,
-          .args = {0},
+          .args =
+            {
+              u32(m_fbNv12Data.get() + i * nv12Size),
+            },
         };
         auto ret = OSSendMessage(&m_fbInQueue, &msg, OS_MESSAGE_FLAGS_NONE);
         assert(ret);
@@ -108,8 +118,8 @@ Ctrl_Movie::Ctrl_Movie()
     m_audioBufferSize = 32000;
     const u32 audioBufferCount = 4;
 
-    m_audioData =
-      std::unique_ptr<u16>(new u16[(m_audioBufferSize * audioBufferCount) * 2]);
+    m_audioData = std::unique_ptr<u16>(new (std::align_val_t(256))
+        u16[(m_audioBufferSize * audioBufferCount) * 2]);
 
     for (u32 i = 0; i < audioBufferCount; i++) {
         OSMessage msg = {
@@ -140,6 +150,7 @@ Ctrl_Movie::Ctrl_Movie()
     }
 
     m_videoThread.Run([&]() { VideoDecodeProc(); });
+    m_videoNV12Thread.Run([&]() { VideoYUV2RGBProc(); });
     m_audioThread.Run([&]() { AudioDecodeProc(); });
 }
 
@@ -162,6 +173,7 @@ void Ctrl_Movie::process()
 {
     static int frameThing = 0;
     frameThing ^= 1;
+    static u32 curNv12 = 0;
 
     OSMessage msg = {};
 
@@ -173,8 +185,8 @@ void Ctrl_Movie::process()
         return;
     }
 
-    u32 width = msg.args[0];
-    u32 height = msg.args[1];
+    u32 width = msg.args[1] >> 16;
+    u32 height = msg.args[1] & 0xFFFF;
     u32 frameId = msg.args[2];
 
     if (frameId == 0) {
@@ -190,13 +202,18 @@ void Ctrl_Movie::process()
     if (tex->surface.image != nullptr) {
         OSMessage msg2 = {
           .message = tex->surface.image,
-          .args = {},
+          .args =
+            {
+              curNv12,
+            },
         };
 
         auto ret =
           OSSendMessage(&m_fbInQueue, &msg2, OS_MESSAGE_FLAGS_BLOCKING);
         assert(ret);
     }
+
+    curNv12 = msg.args[0];
 
     GX2InitTexture(tex, width, height, 1, 1,
       GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8, GX2_SURFACE_DIM_TEXTURE_2D,
@@ -224,7 +241,6 @@ void Ctrl_Movie::VideoDecodeProc()
 
     OSMessage fbMsg = {};
     OSMessage ctrlMsg = {};
-    u32 it = 0;
 
     m_streamEnded = true;
     bool noStream = true;
@@ -249,7 +265,6 @@ void Ctrl_Movie::VideoDecodeProc()
             case CtrlCmd::ChangeMovie:
                 LOG(LogMP4, "Changing movie");
                 m_decoder.OpenMovie((FILE*) ctrlMsg.args[1]);
-                it = 0;
                 m_streamEnded = false;
                 noStream = false;
                 break;
@@ -259,9 +274,8 @@ void Ctrl_Movie::VideoDecodeProc()
             }
         }
 
-        u32 width, height;
-        if (m_streamEnded ||
-            !m_decoder.DecodeFrame(fbMsg.message, &width, &height)) {
+        if (m_streamEnded || !m_decoder.DecodeFrame((u8*) fbMsg.args[0],
+                               (u8*) fbMsg.message, &m_fbNv12Queue)) {
             LOG(LogMP4, "End of stream reached");
             if (m_onEndHandler != nullptr) {
                 m_onEndHandler(this);
@@ -271,18 +285,47 @@ void Ctrl_Movie::VideoDecodeProc()
             continue;
         }
 
-        fbMsg.args[0] = width;
-        fbMsg.args[1] = height;
-        fbMsg.args[2] = it++;
+        fbMsg = {};
+    }
+}
 
+void Ctrl_Movie::VideoYUV2RGBProc()
+{
+    LOG(LogMP4, "Enter video NV12 decode");
+
+    while (true) {
+        OSMessage msg;
         auto ret =
-          OSSendMessage(&m_fbOutQueue, &fbMsg, OS_MESSAGE_FLAGS_BLOCKING);
+          OSReceiveMessage(&m_fbNv12Queue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
         assert(ret);
 
-        fbMsg = {};
+        // Width, Height
+        if (msg.args[1] == 0) {
+            LOG(LogMP4, "Failed to decode frame %u", msg.args[2]);
+            // Send it back to the in queue
+            ret = OSSendMessage(&m_fbInQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
+            assert(ret);
+            continue;
+        }
+
+        u32 width = msg.args[1] >> 16;
+        u32 height = msg.args[1] & 0xFFFF;
+        u32 sample = msg.args[2];
+
+        u8* y = (u8*) msg.args[0];
+        u8* uv = y + RoundUp(width, 256) * height;
+        u32 yuvStride = RoundUp(width, 256);
+
+        // Convert the NV12 image to RGBA. This would rather be done on GPU, but
+        // unfortunately custom shaders aren't very straightforward on Wii U.
+        nv12_rgba32_std(width, height, y, uv, yuvStride, yuvStride,
+          reinterpret_cast<u8*>(msg.message), RoundUp(width, 256) * 4, 1);
+
+        ret = OSSendMessage(&m_fbOutQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
+        assert(ret);
 
         if (m_onFrameHandler != nullptr) {
-            m_onFrameHandler(this, it);
+            m_onFrameHandler(this, sample);
         }
     }
 }
@@ -415,8 +458,7 @@ Ctrl_Movie::Decoder::Decoder(
   : m_parent(parent)
   , m_file(nullptr)
 {
-    OSInitMessageQueueEx(
-      &m_respQueue, m_respMsg, 4, "Ctrl_Movie::Decoder::m_respQueue");
+    OSInitMutexEx(&m_h264Mutex, "Ctrl_Movie::Decoder::m_h264Mutex");
 
     // Invalidate the cache by setting it to an impossible offset
     m_cacheOffset = 1;
@@ -427,9 +469,6 @@ Ctrl_Movie::Decoder::Decoder(
     assert(h264err == H264_ERROR_OK);
 
     m_memory = std::make_unique<u8[]>(memSize);
-    m_nv12Fb = std::unique_ptr<u8>(new (std::align_val_t(256))
-        u8[maxWidth * maxHeight +
-           2 * ((maxWidth + 1) / 2) * ((maxHeight + 1) / 2)]);
 
     h264err = H264DECCheckMemSegmentation(m_memory.get(), memSize);
     assert(h264err == H264_ERROR_OK);
@@ -627,19 +666,24 @@ void Ctrl_Movie::Decoder::H264FrameCallback(H264DecodeOutput* output)
     auto obj = reinterpret_cast<Decoder*>(output->userMemory);
     assert(obj != nullptr);
 
+    msg.message = obj->m_inputRGBAData;
+    msg.args[0] = u32(obj->m_inputNV12Data);
+
     if (output->frameCount == 1) {
-        msg.args[0] = 1;
-        msg.args[1] = output->decodeResults[0]->width;
-        msg.args[2] = output->decodeResults[0]->height;
+        msg.args[1] = output->decodeResults[0]->width << 16;
+        msg.args[1] |= output->decodeResults[0]->height & 0xFFFF;
+        msg.args[2] = obj->m_sample;
     }
 
     auto ret =
-      OSSendMessage(&obj->m_respQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
+      OSSendMessage(obj->m_inputRespQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
     assert(ret);
+
+    OSUnlockMutex(&obj->m_h264Mutex);
 }
 
 bool Ctrl_Movie::Decoder::DecodeFrame(
-  void* outFb, u32* outWidth, u32* outHeight)
+  u8* nv12Fb, u8* rgbaFb, OSMessageQueue* respQueue)
 {
     if (m_tr == nullptr || m_file == nullptr)
         return false;
@@ -654,13 +698,13 @@ bool Ctrl_Movie::Decoder::DecodeFrame(
     if (offset == 0 || byteCount == 0)
         return false;
 
-    m_sampleData = std::make_unique<u8[]>(byteCount);
-    if (!Read(m_sampleData.get(), offset, byteCount)) {
+    auto sampleData = std::make_unique<u8[]>(byteCount);
+    if (!Read(sampleData.get(), offset, byteCount)) {
         LOG(LogMP4, "Failed to read from stream");
         return false;
     }
 
-    auto bitstream = m_sampleData.get();
+    auto bitstream = sampleData.get();
 
     for (u32 tempOffset = 0; tempOffset < byteCount;) {
         u32 size = (*(u32*) (bitstream + tempOffset)) + 4;
@@ -680,6 +724,13 @@ bool Ctrl_Movie::Decoder::DecodeFrame(
     // XXX Should check if the frame can be decoded before attempting to
     // decode
 
+    OSLockMutex(&m_h264Mutex);
+
+    m_sampleData = std::move(sampleData);
+    m_inputNV12Data = nv12Fb;
+    m_inputRGBAData = rgbaFb;
+    m_inputRespQueue = respQueue;
+
     auto h264err = H264DECSetBitstream(
       m_memory.get(), bitstream, byteCount, double(timestamp) / 1000000);
     if (h264err != H264_ERROR_OK) {
@@ -687,45 +738,13 @@ bool Ctrl_Movie::Decoder::DecodeFrame(
         return false;
     }
 
-    h264err = H264DECExecute(m_memory.get(), m_nv12Fb.get());
+    h264err = H264DECExecute(m_memory.get(), nv12Fb);
     if ((h264err & 0xFFFFFF00) != H264_ERROR_OK) {
         LOG(LogMP4, "H264DECExecute error: %X", h264err);
         return false;
     }
 
-#if 0
-        h264err = H264DECFlush(m_memory.get());
-        if (h264err != H264_ERROR_OK) {
-            LOG(LogMP4, "H264DECFlush error: %X", h264err);
-            // I'm not exactly sure what we do in this situation, so just...
-            // ignore it?
-        }
-#endif
-
-    OSMessage msg;
-    if (!OSReceiveMessage(&m_respQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING)) {
-        LOG(LogMP4, "Failed to receive response from the queue");
-        return false;
-    }
-
     m_sample++;
-
-    if (msg.args[0] != 1)
-        return false;
-
-    u32 width = msg.args[1];
-    u32 height = msg.args[2];
-
-    u8* y = m_nv12Fb.get();
-    u8* uv = y + RoundUp(width, 256) * height;
-    u32 yuvStride = RoundUp(width, 256);
-
-    // Convert the NV12 image to RGBA
-    nv12_rgba32_std(width, height, y, uv, yuvStride, yuvStride,
-      reinterpret_cast<u8*>(outFb), RoundUp(width, 256) * 4, 1);
-
-    *outWidth = width;
-    *outHeight = height;
     return true;
 }
 

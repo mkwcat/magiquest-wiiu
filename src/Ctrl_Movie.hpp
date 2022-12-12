@@ -26,7 +26,7 @@ public:
     ~Ctrl_Movie();
 
     static constexpr u32 MaxWidth = 768;
-    static constexpr u32 MaxHeight = 480;
+    static constexpr u32 MaxHeight = 768;
 
     /**
      * GuiElement process.
@@ -39,12 +39,17 @@ public:
     void draw(CVideo* video);
 
     /**
-     * Video decoding procedure.
+     * Video decoding thread entry.
      */
     void VideoDecodeProc();
 
     /**
-     * Video decoding procedure.
+     * NV12 decoding thread entry.
+     */
+    void VideoYUV2RGBProc();
+
+    /**
+     * Audio decoding thread entry.
      */
     void AudioDecodeProc();
 
@@ -121,9 +126,12 @@ private:
     static constexpr u32 FrameBufferCount = 4;
 
     std::unique_ptr<u8> m_fbData;
+    std::unique_ptr<u8> m_fbNv12Data;
 
     OSMessage m_fbInMsg[FrameBufferCount];
     OSMessageQueue m_fbInQueue;
+    OSMessage m_fbNv12Msg[FrameBufferCount];
+    OSMessageQueue m_fbNv12Queue;
     OSMessage m_fbOutMsg[FrameBufferCount];
     OSMessageQueue m_fbOutQueue;
 
@@ -188,7 +196,7 @@ private:
          * Decode a frame from the stream. Returns false if no frame is
          * available (end of stream).
          */
-        bool DecodeFrame(void* outFb, u32* outWidth, u32* outHeight);
+        bool DecodeFrame(u8* nv12Fb, u8* rgbaFb, OSMessageQueue* respQueue);
 
         /**
          * Decode audio from the stream.
@@ -253,13 +261,14 @@ private:
         u32 m_seekOffset;
 
         std::unique_ptr<u8[]> m_memory;
-        std::unique_ptr<u8> m_nv12Fb;
 
         /**
-         * The H264 response queue
+         * Data for the H264 decoding callback.
          */
-        OSMessage m_respMsg[4];
-        OSMessageQueue m_respQueue;
+        OSMutex m_h264Mutex;
+        void* m_inputNV12Data;
+        void* m_inputRGBAData;
+        OSMessageQueue* m_inputRespQueue;
 
         OggVorbis_File m_oggFile;
         FILE* m_audioFile;
@@ -273,6 +282,11 @@ private:
     public:
         DecoderThread()
           : CThread(CThread::eAttributeNone, 16, 0x10000)
+        {
+        }
+
+        DecoderThread(s32 priority)
+          : CThread(CThread::eAttributeNone, priority, 0x10000)
         {
         }
 
@@ -292,8 +306,9 @@ private:
     };
 
     Decoder m_decoder;
-    DecoderThread m_videoThread;
-    DecoderThread m_audioThread;
+    DecoderThread m_videoThread{20};
+    DecoderThread m_videoNV12Thread{10};
+    DecoderThread m_audioThread{1};
 
     OSMutex m_fileMutex;
 
