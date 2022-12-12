@@ -27,22 +27,6 @@ typedef struct {
     u8 err;
 } _WPADStatus;
 
-Wand::Wand()
-{
-    m_casted = false;
-    m_timer = 20;
-    m_castPhase = -1;
-}
-
-Wand::~Wand()
-{
-}
-
-bool Wand::IsStill()
-{
-    return true;
-}
-
 WPADChan GetChanByInt(int chan)
 {
     if (chan == 0) {
@@ -58,6 +42,23 @@ WPADChan GetChanByInt(int chan)
         return WPAD_CHAN_3;
     }
     return WPAD_CHAN_0;
+}
+
+Wand::Wand()
+{
+    m_casted = false;
+    m_timer = 20;
+    m_castPhase = -1;
+}
+
+Wand::~Wand()
+{
+    WPADControlMotor(GetChanByInt(0), FALSE);
+}
+
+bool Wand::IsStill()
+{
+    return true;
 }
 
 void Wand::UpdateAcc(float x, float y, float z)
@@ -97,6 +98,10 @@ void Wand::Update(float* curX, float* curY, float* curZ, bool* curValid)
 {
     if (m_timer > 0) {
         m_timer--;
+    }
+
+    if (m_rumbleTimer > 0) {
+        m_rumbleTimer--;
     }
 
     if (m_castMode == CastMode::RealWand) {
@@ -149,6 +154,11 @@ void Wand::Update(float* curX, float* curY, float* curZ, bool* curValid)
     *curY = m_curPosY;
     *curZ = m_curPosZ;
 
+    if (m_rumbleTimer == 0) {
+        WPADControlMotor(GetChanByInt(0), FALSE);
+        m_rumbleTimer = -1;
+    }
+
     if (m_casted) {
         return;
     }
@@ -196,6 +206,8 @@ void Wand::Update(float* curX, float* curY, float* curZ, bool* curValid)
         }
 
         if (m_stillTicks >= 10 && m_pointedAtTV) {
+            WPADControlMotor(GetChanByInt(0), TRUE);
+            m_rumbleTimer = 3;
             m_casted = true;
             m_castPhase = 0;
             break;

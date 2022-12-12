@@ -62,6 +62,8 @@ private:
      */
     u32 m_timer;
 
+    s32 m_rumbleTimer = -1;
+
     s32 m_castPhase = -1;
     u32 m_stillTicks = 0;
     bool m_pointedAtTV = false;
