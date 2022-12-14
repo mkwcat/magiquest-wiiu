@@ -19,7 +19,7 @@ enum LogSource {
     LogAudio = (1 << 3),
 };
 
-#define RES_ROOT "wiiu/apps/magiquest-wiiu/content"
+#define RES_ROOT "."
 // #define RES_ROOT "/vol/content"
 
 #if CONF_LOG_MASK != 0

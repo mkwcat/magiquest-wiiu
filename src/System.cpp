@@ -399,6 +399,8 @@ int main(int argc, char** argv)
     WHBLogUdpInit();
 #endif
 
+    chdir("wiiu/apps/magiquest-wiiu/content");
+
     Exception::Init();
 
     libgui_memoryInitialize();
