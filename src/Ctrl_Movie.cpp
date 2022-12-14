@@ -461,10 +461,12 @@ void Ctrl_Movie::AudioInitVoice(u32 sampleRate)
     auto ax = AudioMgr::s_instance;
 
     if (m_voiceL != -1) {
+        ax->Stop(m_voiceL);
         ax->FreeVoice(m_voiceL);
     }
 
     if (m_voiceR != -1) {
+        ax->Stop(m_voiceR);
         ax->FreeVoice(m_voiceR);
     }
 

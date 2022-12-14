@@ -26,6 +26,7 @@
 
 #include "Page_Background.hpp"
 #include "Page_CastModeConfirm.hpp"
+#include "Page_DuelGolem.hpp"
 #include "Page_DuelXavier.hpp"
 #include "Page_ModeSelect.hpp"
 #include "Page_Movie.hpp"
@@ -67,7 +68,7 @@ System::System()
         .id = PageID::TouchDuel,
         .tv = false,
         .drc = false,
-        .element = new Page_DuelXavier(),
+        .element = new Page_DuelGolem(),
       },
     }
 {
