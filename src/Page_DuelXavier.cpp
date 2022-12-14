@@ -1,13 +1,13 @@
-// Page_TouchDuel.cpp
+// Page_DuelXavier.cpp
 //   Written by Palapeli
 //
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include "Page_TouchDuel.hpp"
+#include "Page_DuelXavier.hpp"
 #include "Page_Movie.hpp"
 #include <cstdlib>
 
-Page_TouchDuel::Page_TouchDuel()
+Page_DuelXavier::Page_DuelXavier()
   : m_imgManaLeft(nullptr)
   , m_imgManaRight(nullptr)
 {
@@ -17,7 +17,7 @@ Page_TouchDuel::Page_TouchDuel()
     m_started = false;
 }
 
-Page_TouchDuel::~Page_TouchDuel()
+Page_DuelXavier::~Page_DuelXavier()
 {
 }
 
@@ -31,7 +31,7 @@ enum {
     IMG_NOTSELECTABLE = 6,
 };
 
-void Page_TouchDuel::InitSpell(
+void Page_DuelXavier::InitSpell(
   Spell spell, const char** images, int posX, int posY)
 {
     u32 btn = u32(spell);
@@ -59,7 +59,7 @@ void Page_TouchDuel::InitSpell(
     append(&m_buttons[btn]);
 }
 
-void Page_TouchDuel::Init()
+void Page_DuelXavier::Init()
 {
     auto page = System::GetPageStatic<Page_Movie>();
     assert(page != nullptr);
@@ -143,7 +143,7 @@ void Page_TouchDuel::Init()
     InitSpell(Spell::Shadow, SchattenImages, -250, 350);
 }
 
-void Page_TouchDuel::process()
+void Page_DuelXavier::process()
 {
     if (!m_initialized) {
         Init();
@@ -159,7 +159,7 @@ void Page_TouchDuel::process()
     GuiFrame::process();
 }
 
-const char* Page_TouchDuel::NextPhase(Spell castSpell)
+const char* Page_DuelXavier::NextPhase(Spell castSpell)
 {
     switch (m_currentPhase) {
     case Phase::MagiWin:
@@ -378,7 +378,7 @@ const char* Page_TouchDuel::NextPhase(Spell castSpell)
     }
 }
 
-const char* Page_TouchDuel::NextMovie()
+const char* Page_DuelXavier::NextMovie()
 {
     Spell castSpell = m_castSpell;
     m_castSpell = Spell::None;
@@ -420,7 +420,7 @@ const char* Page_TouchDuel::NextMovie()
     return m_phaseMoviePath;
 }
 
-void Page_TouchDuel::NextFrame(u32 frame)
+void Page_DuelXavier::NextFrame(u32 frame)
 {
     if (m_nextPhase != Phase::Retreat)
         return;
@@ -434,7 +434,7 @@ void Page_TouchDuel::NextFrame(u32 frame)
     }
 }
 
-void Page_TouchDuel::Cast(
+void Page_DuelXavier::Cast(
   Wand::CastMode castMode, bool curValid, float curX, float curY, float curZ)
 {
     LOG(LogSystem, "Cast");
@@ -510,7 +510,7 @@ void Page_TouchDuel::Cast(
     }
 }
 
-void Page_TouchDuel::DeselectAll()
+void Page_DuelXavier::DeselectAll()
 {
     for (u32 i = 0; i < SpellCount; i++) {
         m_buttons[i].Deselect();

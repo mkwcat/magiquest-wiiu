@@ -53,6 +53,10 @@ public:
      */
     void AudioDecodeProc();
 
+private:
+    void AudioInitVoice(u32 sampleRate);
+
+public:
     /**
      * Change the movie that is currently playing.
      */
@@ -131,7 +135,7 @@ private:
     /**
      * Left voice buffer return message data.
      */
-    OSMessage m_voiceLReturnMsg[8];
+    OSMessage m_voiceLReturnMsg[16];
 
     /**
      * Left voice buffer return.
@@ -141,7 +145,7 @@ private:
     /**
      * Right voice buffer return message data.
      */
-    OSMessage m_voiceRReturnMsg[8];
+    OSMessage m_voiceRReturnMsg[16];
 
     /**
      * Right voice buffer return.
@@ -192,6 +196,10 @@ private:
      * The sample count for a single audio buffer.
      */
     u32 m_audioBufferSize;
+    u32 m_audioBufferCount;
+
+    OSMessage m_audioNotifyMsg[4];
+    OSMessageQueue m_audioNotifyQueue;
 
     class Decoder
     {
@@ -217,7 +225,7 @@ private:
          * Open the audio file for parsing. Automatically closes any previous
          * context.
          */
-        bool OpenAudio(FILE* audioFile);
+        vorbis_info* OpenAudio(FILE* audioFile);
 
         /**
          * Close the current movie context.

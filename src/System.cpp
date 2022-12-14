@@ -26,9 +26,9 @@
 
 #include "Page_Background.hpp"
 #include "Page_CastModeConfirm.hpp"
+#include "Page_DuelXavier.hpp"
 #include "Page_ModeSelect.hpp"
 #include "Page_Movie.hpp"
-#include "Page_TouchDuel.hpp"
 
 System* System::s_instance = nullptr;
 
@@ -67,7 +67,7 @@ System::System()
         .id = PageID::TouchDuel,
         .tv = false,
         .drc = false,
-        .element = new Page_TouchDuel(),
+        .element = new Page_DuelXavier(),
       },
     }
 {
@@ -90,6 +90,8 @@ System::System()
 
 System::~System()
 {
+    AudioMgr::s_instance->Shutdown();
+
     for (auto set : m_pages) {
         delete set.element;
         set.element = nullptr;
@@ -116,7 +118,6 @@ void System::executeThread()
     ShowPage(System::PageID::Movie, System::Display::TV);
     ShowPage(System::PageID::Background, System::Display::DRC);
     ShowPage(System::PageID::ModeSelect, System::Display::DRC);
-    // ShowPage(System::PageID::TouchDuel, System::Display::DRC);
 
     WaitVSync();
 
@@ -139,6 +140,7 @@ void System::executeThread()
                 m_video->tvEnable(false);
                 m_video->drcEnable(false);
             }
+            break;
         }
     }
 }

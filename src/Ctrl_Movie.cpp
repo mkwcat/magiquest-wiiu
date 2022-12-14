@@ -53,11 +53,8 @@ Ctrl_Movie::Ctrl_Movie()
     OSInitMessageQueueEx(&m_ctrlQueue, m_ctrlMsg, 8, "Ctrl_Movie::m_ctrlQueue");
     OSInitMessageQueueEx(
       &m_audioCtrlQueue, m_audioCtrlMsg, 8, "Ctrl_Movie::m_audioCtrlQueue");
-
-    OSInitMessageQueueEx(&m_voiceLReturnQueue, m_voiceLReturnMsg, 8,
-      "Ctrl_Movie::m_voiceLReturnQueue");
-    OSInitMessageQueueEx(&m_voiceRReturnQueue, m_voiceRReturnMsg, 8,
-      "Ctrl_Movie::m_voiceRReturnQueue");
+    OSInitMessageQueueEx(&m_audioNotifyQueue, m_audioNotifyMsg, 4,
+      "Ctrl_Movie::m_audioNotifyQueue");
 
     OSInitMutexEx(&m_fileMutex, "Ctrl_Movie::m_fileMutex");
 
@@ -101,54 +98,16 @@ Ctrl_Movie::Ctrl_Movie()
 
     m_rgbFrameSize = 0;
 
-    auto ax = AudioMgr::s_instance;
-
-    m_voiceL = ax->AcquireVoice(
-      0x40000000, true, false, true, false, 48000, true, false);
-    assert(m_voiceL != -1);
-
-    m_voiceR = ax->AcquireVoice(
-      0x40000000, false, true, false, true, 48000, true, false);
-    assert(m_voiceR != -1);
-
-    ax->SetBufferOutQueue(m_voiceL, &m_voiceLReturnQueue);
-    ax->SetBufferOutQueue(m_voiceR, &m_voiceRReturnQueue);
+    m_voiceL = -1;
+    m_voiceR = -1;
 
     // Create a large audio buffer and then split it up into multiple parts for
     // each voice queue.
-    m_audioBufferSize = 16000;
-    const u32 audioBufferCount = 4;
+    m_audioBufferSize = 32000;
+    m_audioBufferCount = 4;
 
     m_audioData = std::unique_ptr<u16>(new (std::align_val_t(256))
-        u16[(m_audioBufferSize * audioBufferCount) * 2]);
-
-    for (u32 i = 0; i < audioBufferCount; i++) {
-        OSMessage msg = {
-          .message = (void*) (m_audioData.get() + m_audioBufferSize * i),
-          .args =
-            {
-              m_audioBufferSize,
-            },
-        };
-
-        auto ret =
-          OSSendMessage(&m_voiceLReturnQueue, &msg, OS_MESSAGE_FLAGS_NONE);
-        assert(ret);
-    }
-
-    for (u32 i = audioBufferCount; i < audioBufferCount * 2; i++) {
-        OSMessage msg = {
-          .message = (void*) (m_audioData.get() + m_audioBufferSize * i),
-          .args =
-            {
-              m_audioBufferSize,
-            },
-        };
-
-        auto ret =
-          OSSendMessage(&m_voiceRReturnQueue, &msg, OS_MESSAGE_FLAGS_NONE);
-        assert(ret);
-    }
+        u16[(m_audioBufferSize * m_audioBufferCount) * 2]);
 
     m_videoThread.Run([&]() { VideoDecodeProc(); });
     m_videoNV12Thread.Run([&]() { VideoYUV2RGBProc(); });
@@ -171,7 +130,9 @@ Ctrl_Movie::~Ctrl_Movie()
         },
     };
 
-    auto ret = OSSendMessage(&m_ctrlQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
+    auto ret = OSSendMessage(&m_ctrlQueue, &msg,
+      OSMessageFlags(
+        OS_MESSAGE_FLAGS_BLOCKING | OS_MESSAGE_FLAGS_HIGH_PRIORITY));
     assert(ret);
 
     msg = {
@@ -189,13 +150,10 @@ Ctrl_Movie::~Ctrl_Movie()
         },
     };
 
-    ret = OSSendMessage(&m_audioCtrlQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
+    ret = OSSendMessage(&m_audioCtrlQueue, &msg,
+      OSMessageFlags(
+        OS_MESSAGE_FLAGS_BLOCKING | OS_MESSAGE_FLAGS_HIGH_PRIORITY));
     assert(ret);
-
-    auto ax = AudioMgr::s_instance;
-
-    ax->FreeVoice(m_voiceL);
-    ax->FreeVoice(m_voiceR);
 
     msg = {
       .message = nullptr,
@@ -229,7 +187,6 @@ Ctrl_Movie::~Ctrl_Movie()
 void Ctrl_Movie::process()
 {
     static u32 curNv12 = 0;
-    static int marker = 1;
 
     OSMessage msg = {};
 
@@ -237,7 +194,7 @@ void Ctrl_Movie::process()
         return;
     }
 
-    if (!OSReceiveMessage(&m_fbOutQueue, &msg, OS_MESSAGE_FLAGS_NONE)) {
+    if (!OSPeekMessage(&m_fbOutQueue, &msg)) {
         LOG(LogMP4, "Missed frame");
         return;
     }
@@ -247,10 +204,21 @@ void Ctrl_Movie::process()
     u32 frameId = msg.args[2];
 
     if (frameId == 0) {
-        AudioMgr::s_instance->ChangeMarker(m_voiceL, marker);
-        AudioMgr::s_instance->ChangeMarker(m_voiceR, marker);
-        marker++;
+        // Next audio
+        if (!OSReceiveMessage(
+              &m_audioNotifyQueue, &msg, OS_MESSAGE_FLAGS_NONE)) {
+            return;
+        }
     }
+
+    if (frameId == 3) {
+        AudioMgr::s_instance->Start(m_voiceL);
+        AudioMgr::s_instance->Start(m_voiceR);
+    }
+
+    // Remove it from the queue
+    auto ret = OSReceiveMessage(&m_fbOutQueue, &msg, OS_MESSAGE_FLAGS_NONE);
+    assert(ret);
 
     auto tex = const_cast<GX2Texture*>(m_imageData.getTexture());
     assert(tex != nullptr);
@@ -402,11 +370,54 @@ void Ctrl_Movie::AudioDecodeProc()
     OSMessage vLMsg = {};
     OSMessage vRMsg = {};
     OSMessage ctrlMsg = {};
-    u32 marker = 0;
 
+    bool streamUpdate = false;
     bool noAudioStream = true;
+    bool audioInit = false;
 
     while (true) {
+        // Check for a control message before decoding. If the stream has ended
+        // then this is blocking
+        if (OSReceiveMessage(&m_audioCtrlQueue, &ctrlMsg,
+              noAudioStream ? OS_MESSAGE_FLAGS_BLOCKING
+                            : OS_MESSAGE_FLAGS_NONE)) {
+            LOG_VERBOSE(LogMP4, "Received control command");
+
+            switch (AudioCtrlCmd(ctrlMsg.args[0])) {
+            case AudioCtrlCmd::ChangeAudio: {
+                LOG(LogMP4, "Changing audio");
+                auto info = m_decoder.OpenAudio((FILE*) ctrlMsg.args[1]);
+                assert(info != nullptr);
+
+                AudioInitVoice(info->rate);
+                audioInit = true;
+
+                streamUpdate = true;
+                noAudioStream = false;
+                break;
+            }
+
+            case AudioCtrlCmd::Shutdown:
+                LOG(LogMP4, "Exit audio decode");
+
+                if (m_voiceL != -1) {
+                    AudioMgr::s_instance->FreeVoice(m_voiceL);
+                }
+
+                if (m_voiceR != -1) {
+                    AudioMgr::s_instance->FreeVoice(m_voiceR);
+                }
+                return;
+
+            default:
+                assert(!"Received invalid control command");
+            }
+        }
+
+        if (!audioInit) {
+            continue;
+        }
+
         if (vLMsg.message == nullptr) {
             OSReceiveMessage(
               &m_voiceLReturnQueue, &vLMsg, OS_MESSAGE_FLAGS_BLOCKING);
@@ -417,40 +428,26 @@ void Ctrl_Movie::AudioDecodeProc()
               &m_voiceRReturnQueue, &vRMsg, OS_MESSAGE_FLAGS_BLOCKING);
         }
 
-        // Check for a control message before decoding. If the stream has ended
-        // then this is blocking
-        if (OSReceiveMessage(&m_audioCtrlQueue, &ctrlMsg,
-              noAudioStream ? OS_MESSAGE_FLAGS_BLOCKING
-                            : OS_MESSAGE_FLAGS_NONE)) {
-            LOG_VERBOSE(LogMP4, "Received control command");
-
-            switch (AudioCtrlCmd(ctrlMsg.args[0])) {
-            case AudioCtrlCmd::ChangeAudio:
-                LOG(LogMP4, "Changing audio");
-                m_decoder.OpenAudio((FILE*) ctrlMsg.args[1]);
-                marker++;
-                noAudioStream = false;
-                break;
-
-            case AudioCtrlCmd::Shutdown:
-                LOG(LogMP4, "Exit audio decode");
-                return;
-
-            default:
-                assert(!"Received invalid control command");
-            }
-        }
-
         if (vLMsg.message != nullptr && vRMsg.message != nullptr &&
             !noAudioStream) {
             u32 sampleCount = m_decoder.DecodeAudio((u16*) vLMsg.message,
               (u16*) vRMsg.message, m_audioBufferSize, &noAudioStream);
 
             if (sampleCount != 0) {
+                if (streamUpdate) {
+                    OSMessage msg = {};
+
+                    auto ret = OSSendMessage(
+                      &m_audioNotifyQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
+                    assert(ret);
+
+                    streamUpdate = false;
+                }
+
                 AudioMgr::s_instance->PushBuffer(
-                  m_voiceL, (u16*) vLMsg.message, sampleCount, marker);
+                  m_voiceL, (u16*) vLMsg.message, sampleCount, 0);
                 AudioMgr::s_instance->PushBuffer(
-                  m_voiceR, (u16*) vRMsg.message, sampleCount, marker);
+                  m_voiceR, (u16*) vRMsg.message, sampleCount, 0);
 
                 vLMsg = {};
                 vRMsg = {};
@@ -459,18 +456,75 @@ void Ctrl_Movie::AudioDecodeProc()
     }
 }
 
+void Ctrl_Movie::AudioInitVoice(u32 sampleRate)
+{
+    auto ax = AudioMgr::s_instance;
+
+    if (m_voiceL != -1) {
+        ax->FreeVoice(m_voiceL);
+    }
+
+    if (m_voiceR != -1) {
+        ax->FreeVoice(m_voiceR);
+    }
+
+    OSInitMessageQueueEx(&m_voiceLReturnQueue, m_voiceLReturnMsg, 16,
+      "Ctrl_Movie::m_voiceLReturnQueue");
+    OSInitMessageQueueEx(&m_voiceRReturnQueue, m_voiceRReturnMsg, 16,
+      "Ctrl_Movie::m_voiceRReturnQueue");
+
+    for (u32 i = 0; i < m_audioBufferCount; i++) {
+        OSMessage msg = {
+          .message = (void*) (m_audioData.get() + m_audioBufferSize * i),
+          .args =
+            {
+              m_audioBufferSize,
+            },
+        };
+
+        auto ret =
+          OSSendMessage(&m_voiceLReturnQueue, &msg, OS_MESSAGE_FLAGS_NONE);
+        assert(ret);
+    }
+
+    for (u32 i = m_audioBufferCount; i < m_audioBufferCount * 2; i++) {
+        OSMessage msg = {
+          .message = (void*) (m_audioData.get() + m_audioBufferSize * i),
+          .args =
+            {
+              m_audioBufferSize,
+            },
+        };
+
+        auto ret =
+          OSSendMessage(&m_voiceRReturnQueue, &msg, OS_MESSAGE_FLAGS_NONE);
+        assert(ret);
+    }
+
+    m_voiceL = ax->AcquireVoice(
+      0x40000000, true, false, true, false, sampleRate, true, false);
+    assert(m_voiceL != -1);
+
+    m_voiceR = ax->AcquireVoice(
+      0x40000000, false, true, false, true, sampleRate, true, false);
+    assert(m_voiceR != -1);
+
+    ax->SetBufferOutQueue(m_voiceL, &m_voiceLReturnQueue);
+    ax->SetBufferOutQueue(m_voiceR, &m_voiceRReturnQueue);
+}
+
 bool Ctrl_Movie::ChangeMovie(const char* path)
 {
     Lock l(m_fileMutex);
+
+    char sndPath[256];
+    snprintf(sndPath, 256, "%s.ogg", path);
 
     auto movieFile = fopen(path, "rb");
     if (movieFile == nullptr) {
         LOG(LogMP4, "Failed to open \"%s\"", path);
         return false;
     }
-
-    char sndPath[256];
-    snprintf(sndPath, 256, "%s.ogg", path);
 
     auto audioFile = fopen(sndPath, "rb");
     if (audioFile == nullptr) {
@@ -483,24 +537,33 @@ bool Ctrl_Movie::ChangeMovie(const char* path)
       .message = nullptr,
       .args =
         {
-          [0] = u32(CtrlCmd::ChangeMovie),
-          [1] = u32(movieFile),
-        },
-    };
-
-    auto ret = OSSendMessage(&m_ctrlQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
-    assert(ret);
-
-    msg = {
-      .message = nullptr,
-      .args =
-        {
           [0] = u32(AudioCtrlCmd::ChangeAudio),
           [1] = u32(audioFile),
         },
     };
 
-    ret = OSSendMessage(&m_audioCtrlQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
+    auto ret =
+      OSSendMessage(&m_audioCtrlQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
+    assert(ret);
+
+    msg = {
+      .message = nullptr,
+      .args = {},
+    };
+    // Just a measure to prevent this from blocking the audio thread
+    OSSendMessage(&m_voiceLReturnQueue, &msg, OS_MESSAGE_FLAGS_NONE);
+    OSSendMessage(&m_voiceRReturnQueue, &msg, OS_MESSAGE_FLAGS_NONE);
+
+    msg = {
+      .message = nullptr,
+      .args =
+        {
+          [0] = u32(CtrlCmd::ChangeMovie),
+          [1] = u32(movieFile),
+        },
+    };
+
+    ret = OSSendMessage(&m_ctrlQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
     assert(ret);
 
     return true;
@@ -620,7 +683,7 @@ bool Ctrl_Movie::Decoder::OpenMovie(FILE* movieFile)
     return true;
 }
 
-bool Ctrl_Movie::Decoder::OpenAudio(FILE* audioFile)
+vorbis_info* Ctrl_Movie::Decoder::OpenAudio(FILE* audioFile)
 {
     assert(audioFile != nullptr);
 
@@ -636,7 +699,7 @@ bool Ctrl_Movie::Decoder::OpenAudio(FILE* audioFile)
     assert(oggInfo != nullptr);
 
     LOG(LogMP4, "Audio file opened successfully");
-    return true;
+    return oggInfo;
 }
 
 void Ctrl_Movie::Decoder::CloseMovie()

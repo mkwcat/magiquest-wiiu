@@ -1,4 +1,4 @@
-// Page_TouchDuel.hpp
+// Page_DuelXavier.hpp
 //   Written by Palapeli
 //
 // SPDX-License-Identifier: GPL-2.0-or-later
@@ -12,7 +12,7 @@
 #include <gui/GuiFrame.h>
 #include <gui/GuiImage.h>
 
-class Page_TouchDuel : public GuiFrame, public Encounter
+class Page_DuelXavier : public GuiFrame, public Encounter
 {
     enum class Spell {
         Warrior,
@@ -51,8 +51,8 @@ class Page_TouchDuel : public GuiFrame, public Encounter
     static constexpr u32 AttackPhaseCount = u32(AttackPhase::Default);
 
 public:
-    Page_TouchDuel();
-    ~Page_TouchDuel();
+    Page_DuelXavier();
+    ~Page_DuelXavier();
 
 protected:
     Ctrl_Spell m_buttons[SpellCount];

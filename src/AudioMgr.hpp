@@ -7,6 +7,7 @@
 
 #include <array>
 #include <coreinit/messagequeue.h>
+#include <coreinit/mutex.h>
 #include <gctypes.h>
 #include <gui/system/CThread.h>
 #include <sndcore2/core.h>
@@ -52,6 +53,11 @@ public:
 
     void ChangeMarker(int voice, u32 marker);
 
+    void Shutdown()
+    {
+        m_shutdown = true;
+    }
+
 protected:
     enum FrameCBValue {
         MSG_AXFRAME,
@@ -60,6 +66,10 @@ protected:
 
     OSMessage m_frameCbMsg[8];
     OSMessageQueue m_frameCbQueue;
+
+    OSMutex m_acquireVoiceMutex;
+
+    bool m_shutdown = false;
 
     struct Voice {
         bool m_inUse;
@@ -102,6 +112,9 @@ protected:
 
         OSMessage m_ctrlMsg[8];
         OSMessageQueue m_ctrlQueue;
+
+        OSMessage m_ctrlRespMsg[8];
+        OSMessageQueue m_ctrlRespQueue;
 
         bool m_streamed;
         bool m_looped;

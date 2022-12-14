@@ -22,13 +22,7 @@ AudioMgr::AudioMgr()
     OSInitMessageQueueEx(
       &m_frameCbQueue, m_frameCbMsg, 8, "AudioMgr::m_frameCbQueue");
 
-    for (u32 i = 0; i < m_voices.size(); i++) {
-        OSInitMessageQueueEx(&m_voices[i].m_bufferInQueue,
-          m_voices[i].m_bufferInMsg, 8, "AudioMgr::Voice::m_bufferInQueue");
-
-        OSInitMessageQueueEx(&m_voices[i].m_ctrlQueue, m_voices[i].m_ctrlMsg, 8,
-          "AudioMgr::Voice::m_ctrlQueue");
-    }
+    OSInitMutexEx(&m_acquireVoiceMutex, "AudioMgr::m_acquireVoiceMutex");
 
     resumeThread();
 }
@@ -50,9 +44,23 @@ AudioMgr::~AudioMgr()
 int AudioMgr::AcquireVoice(u32 volume, bool tvLeft, bool tvRight, bool drcLeft,
   bool drcRight, u32 sampleRate, bool streamed, bool looped)
 {
+    if (m_shutdown)
+        return -1;
+
+    Lock l(m_acquireVoiceMutex);
+
     for (u32 i = 0; i < m_voices.size(); i++) {
         if (!m_voices[i].m_inUse && m_voices[i].m_voice == nullptr) {
             m_voices[i].m_inUse = true;
+
+            OSInitMessageQueueEx(&m_voices[i].m_bufferInQueue,
+              m_voices[i].m_bufferInMsg, 8, "AudioMgr::Voice::m_bufferInQueue");
+
+            OSInitMessageQueueEx(&m_voices[i].m_ctrlQueue,
+              m_voices[i].m_ctrlMsg, 8, "AudioMgr::Voice::m_ctrlQueue");
+
+            OSInitMessageQueueEx(&m_voices[i].m_ctrlRespQueue,
+              m_voices[i].m_ctrlRespMsg, 8, "AudioMgr::Voice::m_ctrlRespQueue");
 
             OSMessage msg = {
               .message = nullptr,
@@ -88,6 +96,11 @@ int AudioMgr::AcquireVoice(u32 volume, bool tvLeft, bool tvRight, bool drcLeft,
 
 void AudioMgr::FreeVoice(int voice)
 {
+    if (m_shutdown)
+        return;
+
+    Lock l(m_acquireVoiceMutex);
+
     if (!m_voices[voice].m_inUse) {
         LOG(LogAudio, "Attempt to free a voice that's not in use (%d)", voice);
         return;
@@ -104,10 +117,19 @@ void AudioMgr::FreeVoice(int voice)
     auto ret = OSSendMessage(
       &m_voices[voice].m_ctrlQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
     assert(ret == TRUE);
+
+    ret = OSReceiveMessage(
+      &m_voices[voice].m_ctrlRespQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
+    assert(ret == TRUE);
+
+    m_voices[voice] = {};
 }
 
 void AudioMgr::PushBuffer(int voice, u16* buffer, u32 sampleCount, u32 marker)
 {
+    if (m_shutdown)
+        return;
+
     if (!m_voices[voice].m_inUse) {
         LOG(LogAudio,
           "Attempt to push buffer to a voice that's not in use (%d)", voice);
@@ -130,6 +152,9 @@ void AudioMgr::PushBuffer(int voice, u16* buffer, u32 sampleCount, u32 marker)
 
 void AudioMgr::SetBufferOutQueue(int voice, OSMessageQueue* queue)
 {
+    if (m_shutdown)
+        return;
+
     if (!m_voices[voice].m_inUse) {
         LOG(LogAudio,
           "Attempt to set the buffer out queue in a voice that's not in use "
@@ -143,6 +168,9 @@ void AudioMgr::SetBufferOutQueue(int voice, OSMessageQueue* queue)
 
 void AudioMgr::Start(int voice)
 {
+    if (m_shutdown)
+        return;
+
     if (!m_voices[voice].m_inUse) {
         LOG(LogAudio, "Attempt to start a voice that's not in use (%d)", voice);
         return;
@@ -163,6 +191,9 @@ void AudioMgr::Start(int voice)
 
 void AudioMgr::Stop(int voice)
 {
+    if (m_shutdown)
+        return;
+
     if (!m_voices[voice].m_inUse) {
         LOG(LogAudio, "Attempt to stop a voice that's not in use (%d)", voice);
         return;
@@ -183,6 +214,9 @@ void AudioMgr::Stop(int voice)
 
 void AudioMgr::Restart(int voice)
 {
+    if (m_shutdown)
+        return;
+
     if (!m_voices[voice].m_inUse) {
         LOG(
           LogAudio, "Attempt to restart a voice that's not in use (%d)", voice);
@@ -204,6 +238,9 @@ void AudioMgr::Restart(int voice)
 
 void AudioMgr::ChangeMarker(int voice, u32 marker)
 {
+    if (m_shutdown)
+        return;
+
     if (!m_voices[voice].m_inUse) {
         LOG(
           LogAudio, "Attempt to restart a voice that's not in use (%d)", voice);
@@ -375,7 +412,6 @@ void AudioMgr::executeThread()
                 if (vc->m_streamed && vc->m_lastLoopCount != loopCount) {
                     vc->m_lastLoopCount = loopCount;
                     // Disable looping
-                    // LOG(LogAudio, "disable loop");
                     AXSetVoiceLoop(vc->m_voice, AX_VOICE_LOOP_DISABLED);
                     if (vc->m_nextBuffer != nullptr) {
                         // Now we need to set the next end offset
@@ -474,73 +510,49 @@ void AudioMgr::executeThread()
                       vc->m_initArgs.drcLeft, vc->m_initArgs.drcRight);
                     break;
 
-                case Voice::MSG_FREE:
-                    if (!vc->m_inUse)
+                case Voice::MSG_FREE: {
+                    if (!vc->m_inUse || !vc->m_voice)
                         break;
 
-                    vc->m_inUse = false;
+                    AXSetVoiceState(vc->m_voice, AX_VOICE_STATE_STOPPED);
+                    AXFreeVoice(vc->m_voice);
 
-                    if (vc->m_voice) {
-                        AXSetVoiceState(vc->m_voice, AX_VOICE_STATE_STOPPED);
-                        AXFreeVoice(vc->m_voice);
-
-                        // Clear message queues
-                        while (OSReceiveMessage(
-                          &vc->m_bufferInQueue, &msg, OS_MESSAGE_FLAGS_NONE)) {
-                            if (vc->m_bufferOutQueue != nullptr)
-                                OSSendMessage(vc->m_bufferOutQueue, &msg,
-                                  OS_MESSAGE_FLAGS_BLOCKING);
-                        }
-
-                        while (OSReceiveMessage(
-                          &vc->m_ctrlQueue, &msg, OS_MESSAGE_FLAGS_NONE)) {
-                        }
-
-                        *vc = {
-                          .m_inUse = true,
-                          .m_initArgs = {0},
-                          .m_voice = vc->m_voice,
-                          .m_voiceSrc = {0},
-                          .m_voiceOffsets = {0},
-                          .m_state = Voice::State::Stopped,
-                          .m_marker = 0,
-                          .m_bufferInMsg = {vc->m_bufferInMsg},
-                          .m_bufferInQueue = {vc->m_bufferInQueue},
-                          .m_bufferOutQueue = nullptr,
-                          .m_ctrlMsg = {vc->m_ctrlMsg},
-                          .m_ctrlQueue = {vc->m_ctrlQueue},
-                          .m_streamed = false,
-                          .m_looped = false,
-                          .m_sampleRate = 0,
-                          .m_lastLoopCount = 0,
-                          .m_needsBuffer = false,
-                          .m_buffer = nullptr,
-                          .m_bufferSampleCount = 0,
-                          .m_nextBuffer = nullptr,
-                          .m_nextBufferSampleCount = 0,
-                          .m_nextBufferMarker = 0,
-                        };
-
-                        vc->m_voice = nullptr;
+                    // Clear buffer in queue
+                    while (OSReceiveMessage(
+                      &vc->m_bufferInQueue, &msg, OS_MESSAGE_FLAGS_NONE)) {
+                        if (vc->m_bufferOutQueue != nullptr)
+                            OSSendMessage(vc->m_bufferOutQueue, &msg,
+                              OS_MESSAGE_FLAGS_BLOCKING);
                     }
 
+                    vc->m_voice = nullptr;
+
+                    msg = {};
+                    auto ret = OSSendMessage(
+                      &vc->m_ctrlRespQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
+                    assert(ret);
                     break;
+                }
 
                 case Voice::MSG_START:
+                    assert(vc->m_inUse && vc->m_voice);
                     vc->m_state = Voice::State::Playing;
                     AXSetVoiceState(vc->m_voice, AX_VOICE_STATE_PLAYING);
                     break;
 
                 case Voice::MSG_STOP:
+                    assert(vc->m_inUse && vc->m_voice);
                     vc->m_state = Voice::State::Stopped;
                     AXSetVoiceState(vc->m_voice, AX_VOICE_STATE_STOPPED);
                     break;
 
                 case Voice::MSG_RESTART:
+                    assert(vc->m_inUse && vc->m_voice);
                     AXSetVoiceCurrentOffset(vc->m_voice, 0);
                     break;
 
                 case Voice::MSG_CHANGE_MARKER: {
+                    assert(vc->m_inUse && vc->m_voice);
                     vc->m_state = Voice::State::WaitingOnMarker;
                     AXSetVoiceState(vc->m_voice, AX_VOICE_STATE_STOPPED);
 
