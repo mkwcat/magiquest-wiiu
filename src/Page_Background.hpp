@@ -20,8 +20,12 @@ public:
     void process()
     {
         if (!m_initialized) {
-            m_bgImgData.loadImageFromFile(RES_ROOT "/Image/sgStone-Tasks.jpg",
-              GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
+            {
+                Lock l(sys()->FileMutex());
+                m_bgImgData.loadImageFromFile(
+                  RES_ROOT "/Image/sgStone-Tasks.jpg", GX2_TEX_CLAMP_MODE_CLAMP,
+                  GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
+            }
             m_bgImg.setImageData(&m_bgImgData);
 
             m_bgImg.setScaleX(1920 / m_bgImg.getWidth());

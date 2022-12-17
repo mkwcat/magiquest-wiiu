@@ -16,8 +16,11 @@ Page_CastModeConfirm::Page_CastModeConfirm()
 
 void Page_CastModeConfirm::Init()
 {
-    m_titleData.loadImageFromFile(RES_ROOT "/Image/mqTitleCastDuel.png",
-      GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
+    {
+        Lock l(sys()->FileMutex());
+        m_titleData.loadImageFromFile(RES_ROOT "/Image/mqTitleCastDuel.png",
+          GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
+    }
     m_title.setImageData(&m_titleData);
 
     m_title.setPosition(0, 370);
@@ -26,9 +29,12 @@ void Page_CastModeConfirm::Init()
 
     append(&m_title);
 
-    m_instructionData.loadImageFromFile(RES_ROOT
-      "/Image/mqInstructionCastDuel.png",
-      GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
+    {
+        Lock l(sys()->FileMutex());
+        m_instructionData.loadImageFromFile(RES_ROOT
+          "/Image/mqInstructionCastDuel.png",
+          GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
+    }
     m_instruction.setImageData(&m_instructionData);
 
     m_instruction.setPosition(0, 20);
@@ -37,9 +43,12 @@ void Page_CastModeConfirm::Init()
 
     append(&m_instruction);
 
-    m_imgCheckData.loadImageFromFile(RES_ROOT
-      "/Image/icWaxSeal-Green-Check.png",
-      GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
+    {
+        Lock l(sys()->FileMutex());
+        m_imgCheckData.loadImageFromFile(RES_ROOT
+          "/Image/icWaxSeal-Green-Check.png",
+          GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
+    }
     m_imgCheck.setImageData(&m_imgCheckData);
 
     m_imgCheck.setPosition(550, -280);

@@ -293,7 +293,5 @@ private:
 
     Decoder m_decoder;
 
-    OSMutex m_fileMutex;
-
     bool m_streamEnded;
 };

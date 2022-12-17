@@ -38,6 +38,8 @@ Page_Movie::Page_Movie()
     append(&m_movie);
 
     for (u32 i = 0; i < 17; i++) {
+        Lock l(sys()->FileMutex());
+
         char path[64];
         snprintf(path, 64, RES_ROOT "/Image/mana_l%u.png", i);
 
@@ -125,7 +127,6 @@ void Page_Movie::process()
     static int voiceDown = -1;
     if (!started) {
         started = true;
-        LOG(LogAudio, "Making an audio player");
 
         auto ax = AXManager::s_instance;
 

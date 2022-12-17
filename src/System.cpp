@@ -44,31 +44,31 @@ System::System()
         .id = PageID::Movie,
         .tv = false,
         .drc = false,
-        .element = new Page_Movie(),
+        .element = nullptr,
       },
       {
         .id = PageID::Background,
         .tv = false,
         .drc = false,
-        .element = new Page_Background(),
+        .element = nullptr,
       },
       {
         .id = PageID::ModeSelect,
         .tv = false,
         .drc = false,
-        .element = new Page_ModeSelect(),
+        .element = nullptr,
       },
       {
         .id = PageID::CastModeConfirm,
         .tv = false,
         .drc = false,
-        .element = new Page_CastModeConfirm(),
+        .element = nullptr,
       },
       {
         .id = PageID::TouchDuel,
         .tv = false,
         .drc = false,
-        .element = new Page_DuelGolem(),
+        .element = nullptr,
       },
     }
 {
@@ -77,6 +77,15 @@ System::System()
     }
 
     LOG(LogSystem, "Starting application");
+
+    OSInitMutexEx(&m_fileMutex, "System::m_fileMutex");
+
+    // Construct page objects
+    m_pages[u32(PageID::Movie)].element = new Page_Movie();
+    m_pages[u32(PageID::Background)].element = new Page_Background();
+    m_pages[u32(PageID::ModeSelect)].element = new Page_ModeSelect();
+    m_pages[u32(PageID::CastModeConfirm)].element = new Page_CastModeConfirm();
+    m_pages[u32(PageID::TouchDuel)].element = new Page_DuelXavier();
 
     m_imgCursorTimer = 0;
     m_frameId = 0;
@@ -167,6 +176,8 @@ u32 System::CallbackRelease(void* context)
 
 void* System::RipFile(const char* path, u32* length)
 {
+    Lock l(sys()->FileMutex());
+
     auto file = fopen(path, "rb");
 
     if (file == nullptr)
@@ -178,7 +189,7 @@ void* System::RipFile(const char* path, u32* length)
 
     fseek(file, 0, SEEK_SET);
 
-    u8* data = new u8[filesize];
+    u8* data = new (std::align_val_t(256)) u8[filesize];
 
     auto ret = fread(data, filesize, 1, file);
 
@@ -417,11 +428,6 @@ int main(int argc, char** argv)
     // Scoped System
     {
         System sys;
-
-        LOG(LogMP4, "Sleeping for 1...");
-        sleep(1);
-        LOG(LogMP4, "Done!");
-
         sys.Start();
     }
 

@@ -139,6 +139,14 @@ public:
     }
 
     /**
+     * Get the file access mutex.
+     */
+    OSMutex& FileMutex()
+    {
+        return m_fileMutex;
+    }
+
+    /**
      * Call this every frame.
      */
     bool Tick();
@@ -176,7 +184,14 @@ protected:
     s32 m_imgCursorTimer;
     Wand m_wand;
 
+    OSMutex m_fileMutex;
+
     PageSetting m_pages[PageCount];
 
     u32 m_frameId;
 };
+
+static inline System* sys()
+{
+    return System::s_instance;
+}

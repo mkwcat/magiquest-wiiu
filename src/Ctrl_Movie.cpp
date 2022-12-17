@@ -63,8 +63,6 @@ Ctrl_Movie::Ctrl_Movie()
     OSInitMessageQueueEx(&m_audioNotifyQueue, m_audioNotifyMsg, 4,
       "Ctrl_Movie::m_audioNotifyQueue");
 
-    OSInitMutexEx(&m_fileMutex, "Ctrl_Movie::m_fileMutex");
-
     m_image.setColorIntensity({1.1, 1.1, 1.1, 1});
 
     // Initialize a texture to get the framebuffer size
@@ -204,7 +202,7 @@ void Ctrl_Movie::process()
         }
     }
 
-    if (frameId == 3) {
+    if (frameId == 2) {
         // Stop the old voices
         m_voiceL[m_curVoice ^ 1].Stop();
         m_voiceR[m_curVoice ^ 1].Stop();
@@ -442,7 +440,7 @@ void Ctrl_Movie::AudioDecodeProc()
 
 bool Ctrl_Movie::ChangeMovie(const char* path)
 {
-    Lock l(m_fileMutex);
+    Lock l(sys()->FileMutex());
 
     char sndPath[256];
     snprintf(sndPath, 256, "%s.ogg", path);
@@ -573,7 +571,7 @@ bool Ctrl_Movie::Decoder::OpenMovie(FILE* movieFile)
     // XXX Getting the size could probably be done better (and faster) with
     // fstat
 
-    Lock l(m_parent->m_fileMutex);
+    Lock l(sys()->FileMutex());
 
     if (fseek(movieFile, 0, SEEK_END) != 0) {
         LOG(LogMP4, "Failed to seek to the end of the file");
@@ -636,7 +634,7 @@ void Ctrl_Movie::Decoder::CloseMovie()
     m_file = nullptr;
     m_tr = nullptr;
 
-    Lock l(m_parent->m_fileMutex);
+    Lock l(sys()->FileMutex());
 
     fclose(f2);
     MP4D_close(&m_mp4);
@@ -683,7 +681,7 @@ bool Ctrl_Movie::Decoder::Read(u8* out, u32 offset, u32 len)
             return false;
     }
 
-    Lock l(m_parent->m_fileMutex);
+    Lock l(sys()->FileMutex());
 
     // Read the rest of the data
     while (len > 0) {
@@ -813,7 +811,7 @@ size_t Ctrl_Movie::Decoder::OGGRead(
     assert(f != nullptr);
     auto obj = reinterpret_cast<Decoder*>(f);
 
-    Lock l(obj->m_parent->m_fileMutex);
+    Lock l(sys()->FileMutex());
 
     return fread(punt, 1, bytes * blocks, obj->m_audioFile);
 }
@@ -823,7 +821,7 @@ int Ctrl_Movie::Decoder::OGGSeek(void* f, ogg_int64_t offset, int mode)
     assert(f != nullptr);
     auto obj = reinterpret_cast<Decoder*>(f);
 
-    Lock l(obj->m_parent->m_fileMutex);
+    Lock l(sys()->FileMutex());
 
     return fseek(obj->m_audioFile, offset, mode);
 }
@@ -833,7 +831,7 @@ int Ctrl_Movie::Decoder::OGGClose(void* f)
     assert(f != nullptr);
     auto obj = reinterpret_cast<Decoder*>(f);
 
-    Lock l(obj->m_parent->m_fileMutex);
+    Lock l(sys()->FileMutex());
 
     fclose(obj->m_audioFile);
     return 0;
@@ -844,7 +842,7 @@ long Ctrl_Movie::Decoder::OGGTell(void* f)
     assert(f != nullptr);
     auto obj = reinterpret_cast<Decoder*>(f);
 
-    Lock l(obj->m_parent->m_fileMutex);
+    Lock l(sys()->FileMutex());
 
     return ftell(obj->m_audioFile);
 }

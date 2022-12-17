@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "System.hpp"
 #include "Util.hpp"
 #include <cstring>
 #include <functional>
@@ -42,6 +43,8 @@ public:
 
         // Init loop
         for (u32 i = 0; i < imageCount; i++) {
+            Lock l(sys()->FileMutex());
+
             m_images[i].first.loadImageFromFile(images[i],
               GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
             m_images[i].second.setImageData(&m_images[i].first);

@@ -22,6 +22,8 @@ Page_ModeSelect::Page_ModeSelect()
 
 void Page_ModeSelect::Init()
 {
+    Lock l(sys()->FileMutex());
+
     m_titleData.loadImageFromFile(RES_ROOT "/Image/mqTitleSelectCastMode.png",
       GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
     m_title.setImageData(&m_titleData);
