@@ -318,7 +318,9 @@ void AudioMgr::InternalVoiceSetOffsets(Voice* vc, bool loop)
     vc->m_voiceOffsets = {};
     vc->m_voiceOffsets = {
       .dataType = AX_VOICE_FORMAT_LPCM16,
-      .loopingEnabled = loop ? AX_VOICE_LOOP_ENABLED : AX_VOICE_LOOP_DISABLED,
+      .loopingEnabled = loop && (vc->m_nextBuffer || !vc->m_streamed)
+                          ? AX_VOICE_LOOP_ENABLED
+                          : AX_VOICE_LOOP_DISABLED,
       .loopOffset =
         loop && vc->m_nextBuffer ? vc->m_nextBuffer - vc->m_buffer : 0,
       .endOffset = vc->m_bufferSampleCount - 1,
@@ -425,6 +427,8 @@ void AudioMgr::executeThread()
                         vc->m_bufferSampleCount = vc->m_nextBufferSampleCount;
                         vc->m_nextBuffer = nullptr;
                         vc->m_nextBufferSampleCount = 0;
+                    } else {
+                        AXSetVoiceState(vc->m_voice, AX_VOICE_STATE_STOPPED);
                     }
                 }
 
@@ -520,9 +524,23 @@ void AudioMgr::executeThread()
                     // Clear buffer in queue
                     while (OSReceiveMessage(
                       &vc->m_bufferInQueue, &msg, OS_MESSAGE_FLAGS_NONE)) {
-                        if (vc->m_bufferOutQueue != nullptr)
+                        if (vc->m_bufferOutQueue != nullptr) {
                             OSSendMessage(vc->m_bufferOutQueue, &msg,
                               OS_MESSAGE_FLAGS_BLOCKING);
+                        } else {
+                            free(msg.message);
+                        }
+                    }
+
+                    if (vc->m_nextBuffer != nullptr) {
+                        sendBufferBack(
+                          vc->m_nextBuffer, vc->m_nextBufferSampleCount);
+                        vc->m_nextBuffer = nullptr;
+                    }
+
+                    if (vc->m_buffer != nullptr) {
+                        sendBufferBack(vc->m_buffer, vc->m_bufferSampleCount);
+                        vc->m_buffer = nullptr;
                     }
 
                     vc->m_voice = nullptr;

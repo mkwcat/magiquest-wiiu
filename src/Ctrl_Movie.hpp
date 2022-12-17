@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "AXVoiceStream.hpp"
 #include "Util.hpp"
 #include "minimp4.h"
 #include <coreinit/messagequeue.h>
@@ -52,9 +53,6 @@ public:
      * Audio decoding thread entry.
      */
     void AudioDecodeProc();
-
-private:
-    void AudioInitVoice(u32 sampleRate);
 
 public:
     /**
@@ -122,36 +120,6 @@ private:
     DecoderThread m_videoNV12Thread{10};
     DecoderThread m_audioThread{1};
 
-    /**
-     * Left audio voice.
-     */
-    int m_voiceL;
-
-    /**
-     * Right audio voice.
-     */
-    int m_voiceR;
-
-    /**
-     * Left voice buffer return message data.
-     */
-    OSMessage m_voiceLReturnMsg[16];
-
-    /**
-     * Left voice buffer return.
-     */
-    OSMessageQueue m_voiceLReturnQueue;
-
-    /**
-     * Right voice buffer return message data.
-     */
-    OSMessage m_voiceRReturnMsg[16];
-
-    /**
-     * Right voice buffer return.
-     */
-    OSMessageQueue m_voiceRReturnQueue;
-
     GuiImage m_image;
     GuiImageData m_imageData;
     std::unique_ptr<u8> m_rgbFrame;
@@ -188,15 +156,16 @@ private:
     OSMessageQueue m_audioCtrlQueue;
 
     /**
-     * Audio buffers for use in the voice queues.
+     * Left audio voice.
      */
-    std::unique_ptr<u16> m_audioData;
+    AXVoiceStream m_voiceL[2];
 
     /**
-     * The sample count for a single audio buffer.
+     * Right audio voice.
      */
-    u32 m_audioBufferSize;
-    u32 m_audioBufferCount;
+    AXVoiceStream m_voiceR[2];
+
+    int m_curVoice = 0;
 
     OSMessage m_audioNotifyMsg[4];
     OSMessageQueue m_audioNotifyQueue;

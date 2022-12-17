@@ -42,6 +42,14 @@ Ctrl_Movie::Ctrl_Movie()
   : m_image(nullptr)
   , m_imageData(blankImg, sizeof(blankImg), GX2_TEX_CLAMP_MODE_CLAMP,
       GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8)
+  , m_voiceL{
+      {32000, 4},
+      {32000, 4},
+    }
+  , m_voiceR{
+      {32000, 4},
+      {32000, 4},
+    }
   , m_decoder(this, 100, 40, MaxWidth, MaxHeight)
 {
     OSInitMessageQueueEx(
@@ -98,17 +106,6 @@ Ctrl_Movie::Ctrl_Movie()
 
     m_rgbFrameSize = 0;
 
-    m_voiceL = -1;
-    m_voiceR = -1;
-
-    // Create a large audio buffer and then split it up into multiple parts for
-    // each voice queue.
-    m_audioBufferSize = 32000;
-    m_audioBufferCount = 4;
-
-    m_audioData = std::unique_ptr<u16>(new (std::align_val_t(256))
-        u16[(m_audioBufferSize * m_audioBufferCount) * 2]);
-
     m_videoThread.Run([&]() { VideoDecodeProc(); });
     m_videoNV12Thread.Run([&]() { VideoYUV2RGBProc(); });
     m_audioThread.Run([&]() { AudioDecodeProc(); });
@@ -155,13 +152,10 @@ Ctrl_Movie::~Ctrl_Movie()
         OS_MESSAGE_FLAGS_BLOCKING | OS_MESSAGE_FLAGS_HIGH_PRIORITY));
     assert(ret);
 
-    msg = {
-      .message = nullptr,
-      .args = {},
-    };
-    // Just a measure to prevent this from blocking the audio thread
-    OSSendMessage(&m_voiceLReturnQueue, &msg, OS_MESSAGE_FLAGS_NONE);
-    OSSendMessage(&m_voiceRReturnQueue, &msg, OS_MESSAGE_FLAGS_NONE);
+    m_voiceL[0].Wakeup();
+    m_voiceL[1].Wakeup();
+    m_voiceR[0].Wakeup();
+    m_voiceR[1].Wakeup();
 
     msg = {
       .message = nullptr,
@@ -212,8 +206,13 @@ void Ctrl_Movie::process()
     }
 
     if (frameId == 3) {
-        AudioMgr::s_instance->Start(m_voiceL);
-        AudioMgr::s_instance->Start(m_voiceR);
+        // Stop the old voices
+        m_voiceL[m_curVoice ^ 1].Stop();
+        m_voiceR[m_curVoice ^ 1].Stop();
+
+        // Start the new voices
+        m_voiceL[m_curVoice].Start();
+        m_voiceR[m_curVoice].Start();
     }
 
     // Remove it from the queue
@@ -367,13 +366,12 @@ void Ctrl_Movie::AudioDecodeProc()
 {
     LOG(LogMP4, "Enter audio decode");
 
-    OSMessage vLMsg = {};
-    OSMessage vRMsg = {};
+    u16* bufferL = nullptr;
+    u16* bufferR = nullptr;
     OSMessage ctrlMsg = {};
 
     bool streamUpdate = false;
     bool noAudioStream = true;
-    bool audioInit = false;
 
     while (true) {
         // Check for a control message before decoding. If the stream has ended
@@ -389,8 +387,11 @@ void Ctrl_Movie::AudioDecodeProc()
                 auto info = m_decoder.OpenAudio((FILE*) ctrlMsg.args[1]);
                 assert(info != nullptr);
 
-                AudioInitVoice(info->rate);
-                audioInit = true;
+                m_curVoice ^= 1;
+                m_voiceL[m_curVoice].Init(
+                  0x40000000, true, false, true, false, info->rate);
+                m_voiceR[m_curVoice].Init(
+                  0x40000000, false, true, false, true, info->rate);
 
                 streamUpdate = true;
                 noAudioStream = false;
@@ -399,14 +400,6 @@ void Ctrl_Movie::AudioDecodeProc()
 
             case AudioCtrlCmd::Shutdown:
                 LOG(LogMP4, "Exit audio decode");
-
-                if (m_voiceL != -1) {
-                    AudioMgr::s_instance->FreeVoice(m_voiceL);
-                }
-
-                if (m_voiceR != -1) {
-                    AudioMgr::s_instance->FreeVoice(m_voiceR);
-                }
                 return;
 
             default:
@@ -414,24 +407,18 @@ void Ctrl_Movie::AudioDecodeProc()
             }
         }
 
-        if (!audioInit) {
+        if (noAudioStream) {
             continue;
         }
 
-        if (vLMsg.message == nullptr) {
-            OSReceiveMessage(
-              &m_voiceLReturnQueue, &vLMsg, OS_MESSAGE_FLAGS_BLOCKING);
-        }
+        bufferL =
+          bufferL != nullptr ? bufferL : m_voiceL[m_curVoice].RecvBuffer(true);
+        bufferR =
+          bufferR != nullptr ? bufferR : m_voiceR[m_curVoice].RecvBuffer(true);
 
-        if (vRMsg.message == nullptr) {
-            OSReceiveMessage(
-              &m_voiceRReturnQueue, &vRMsg, OS_MESSAGE_FLAGS_BLOCKING);
-        }
-
-        if (vLMsg.message != nullptr && vRMsg.message != nullptr &&
-            !noAudioStream) {
-            u32 sampleCount = m_decoder.DecodeAudio((u16*) vLMsg.message,
-              (u16*) vRMsg.message, m_audioBufferSize, &noAudioStream);
+        if (bufferL != nullptr && bufferR != nullptr) {
+            u32 sampleCount = m_decoder.DecodeAudio(
+              bufferL, bufferR, m_voiceL[0].GetBufferSize(), &noAudioStream);
 
             if (sampleCount != 0) {
                 if (streamUpdate) {
@@ -444,75 +431,14 @@ void Ctrl_Movie::AudioDecodeProc()
                     streamUpdate = false;
                 }
 
-                AudioMgr::s_instance->PushBuffer(
-                  m_voiceL, (u16*) vLMsg.message, sampleCount, 0);
-                AudioMgr::s_instance->PushBuffer(
-                  m_voiceR, (u16*) vRMsg.message, sampleCount, 0);
+                m_voiceL[m_curVoice].PushBuffer(bufferL, sampleCount);
+                m_voiceR[m_curVoice].PushBuffer(bufferR, sampleCount);
 
-                vLMsg = {};
-                vRMsg = {};
+                bufferL = nullptr;
+                bufferR = nullptr;
             }
         }
     }
-}
-
-void Ctrl_Movie::AudioInitVoice(u32 sampleRate)
-{
-    auto ax = AudioMgr::s_instance;
-
-    if (m_voiceL != -1) {
-        ax->Stop(m_voiceL);
-        ax->FreeVoice(m_voiceL);
-    }
-
-    if (m_voiceR != -1) {
-        ax->Stop(m_voiceR);
-        ax->FreeVoice(m_voiceR);
-    }
-
-    OSInitMessageQueueEx(&m_voiceLReturnQueue, m_voiceLReturnMsg, 16,
-      "Ctrl_Movie::m_voiceLReturnQueue");
-    OSInitMessageQueueEx(&m_voiceRReturnQueue, m_voiceRReturnMsg, 16,
-      "Ctrl_Movie::m_voiceRReturnQueue");
-
-    for (u32 i = 0; i < m_audioBufferCount; i++) {
-        OSMessage msg = {
-          .message = (void*) (m_audioData.get() + m_audioBufferSize * i),
-          .args =
-            {
-              m_audioBufferSize,
-            },
-        };
-
-        auto ret =
-          OSSendMessage(&m_voiceLReturnQueue, &msg, OS_MESSAGE_FLAGS_NONE);
-        assert(ret);
-    }
-
-    for (u32 i = m_audioBufferCount; i < m_audioBufferCount * 2; i++) {
-        OSMessage msg = {
-          .message = (void*) (m_audioData.get() + m_audioBufferSize * i),
-          .args =
-            {
-              m_audioBufferSize,
-            },
-        };
-
-        auto ret =
-          OSSendMessage(&m_voiceRReturnQueue, &msg, OS_MESSAGE_FLAGS_NONE);
-        assert(ret);
-    }
-
-    m_voiceL = ax->AcquireVoice(
-      0x40000000, true, false, true, false, sampleRate, true, false);
-    assert(m_voiceL != -1);
-
-    m_voiceR = ax->AcquireVoice(
-      0x40000000, false, true, false, true, sampleRate, true, false);
-    assert(m_voiceR != -1);
-
-    ax->SetBufferOutQueue(m_voiceL, &m_voiceLReturnQueue);
-    ax->SetBufferOutQueue(m_voiceR, &m_voiceRReturnQueue);
 }
 
 bool Ctrl_Movie::ChangeMovie(const char* path)
@@ -548,13 +474,10 @@ bool Ctrl_Movie::ChangeMovie(const char* path)
       OSSendMessage(&m_audioCtrlQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
     assert(ret);
 
-    msg = {
-      .message = nullptr,
-      .args = {},
-    };
-    // Just a measure to prevent this from blocking the audio thread
-    OSSendMessage(&m_voiceLReturnQueue, &msg, OS_MESSAGE_FLAGS_NONE);
-    OSSendMessage(&m_voiceRReturnQueue, &msg, OS_MESSAGE_FLAGS_NONE);
+    m_voiceL[0].Wakeup();
+    m_voiceL[1].Wakeup();
+    m_voiceR[0].Wakeup();
+    m_voiceR[1].Wakeup();
 
     msg = {
       .message = nullptr,
