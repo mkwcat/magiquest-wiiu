@@ -1,15 +1,15 @@
-// AudioMgr.cpp
+// AXManager.cpp
 //   Written by Palapeli
 //
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include "AudioMgr.hpp"
+#include "AXManager.hpp"
 #include "Util.hpp"
 #include <coreinit/cache.h>
 
-AudioMgr* AudioMgr::s_instance = nullptr;
+AXManager* AXManager::s_instance = nullptr;
 
-AudioMgr::AudioMgr()
+AXManager::AXManager()
   : CThread(
       CThread::eAttributeAffCore1 | CThread::eAttributePinnedAff, 16, 0x80000)
   , m_voices{0}
@@ -17,19 +17,19 @@ AudioMgr::AudioMgr()
 {
     s_instance = this;
 
-    LOG(LogAudio, "Starting up AudioMgr");
+    LOG(LogAudio, "Starting up AXManager");
 
     OSInitMessageQueueEx(
-      &m_frameCbQueue, m_frameCbMsg, 8, "AudioMgr::m_frameCbQueue");
+      &m_frameCbQueue, m_frameCbMsg, 8, "AXManager::m_frameCbQueue");
 
-    OSInitMutexEx(&m_acquireVoiceMutex, "AudioMgr::m_acquireVoiceMutex");
+    OSInitMutexEx(&m_acquireVoiceMutex, "AXManager::m_acquireVoiceMutex");
 
     resumeThread();
 }
 
-AudioMgr::~AudioMgr()
+AXManager::~AXManager()
 {
-    LOG(LogAudio, "Shutting down AudioMgr");
+    LOG(LogAudio, "Shutting down AXManager");
 
     OSMessage msg = {
       .message = nullptr,
@@ -41,7 +41,7 @@ AudioMgr::~AudioMgr()
     }
 }
 
-int AudioMgr::AcquireVoice(u32 volume, bool tvLeft, bool tvRight, bool drcLeft,
+int AXManager::AcquireVoice(u32 volume, bool tvLeft, bool tvRight, bool drcLeft,
   bool drcRight, u32 sampleRate, bool streamed, bool looped)
 {
     if (m_shutdown)
@@ -54,13 +54,15 @@ int AudioMgr::AcquireVoice(u32 volume, bool tvLeft, bool tvRight, bool drcLeft,
             m_voices[i].m_inUse = true;
 
             OSInitMessageQueueEx(&m_voices[i].m_bufferInQueue,
-              m_voices[i].m_bufferInMsg, 8, "AudioMgr::Voice::m_bufferInQueue");
+              m_voices[i].m_bufferInMsg, 8,
+              "AXManager::Voice::m_bufferInQueue");
 
             OSInitMessageQueueEx(&m_voices[i].m_ctrlQueue,
-              m_voices[i].m_ctrlMsg, 8, "AudioMgr::Voice::m_ctrlQueue");
+              m_voices[i].m_ctrlMsg, 8, "AXManager::Voice::m_ctrlQueue");
 
             OSInitMessageQueueEx(&m_voices[i].m_ctrlRespQueue,
-              m_voices[i].m_ctrlRespMsg, 8, "AudioMgr::Voice::m_ctrlRespQueue");
+              m_voices[i].m_ctrlRespMsg, 8,
+              "AXManager::Voice::m_ctrlRespQueue");
 
             OSMessage msg = {
               .message = nullptr,
@@ -94,7 +96,7 @@ int AudioMgr::AcquireVoice(u32 volume, bool tvLeft, bool tvRight, bool drcLeft,
     return -1;
 }
 
-void AudioMgr::FreeVoice(int voice)
+void AXManager::FreeVoice(int voice)
 {
     if (m_shutdown)
         return;
@@ -125,7 +127,7 @@ void AudioMgr::FreeVoice(int voice)
     m_voices[voice] = {};
 }
 
-void AudioMgr::PushBuffer(int voice, u16* buffer, u32 sampleCount, u32 marker)
+void AXManager::PushBuffer(int voice, u16* buffer, u32 sampleCount, u32 marker)
 {
     if (m_shutdown)
         return;
@@ -150,7 +152,7 @@ void AudioMgr::PushBuffer(int voice, u16* buffer, u32 sampleCount, u32 marker)
     assert(ret == TRUE);
 }
 
-void AudioMgr::SetBufferOutQueue(int voice, OSMessageQueue* queue)
+void AXManager::SetBufferOutQueue(int voice, OSMessageQueue* queue)
 {
     if (m_shutdown)
         return;
@@ -166,7 +168,7 @@ void AudioMgr::SetBufferOutQueue(int voice, OSMessageQueue* queue)
     m_voices[voice].m_bufferOutQueue = queue;
 }
 
-void AudioMgr::Start(int voice)
+void AXManager::Start(int voice)
 {
     if (m_shutdown)
         return;
@@ -189,7 +191,7 @@ void AudioMgr::Start(int voice)
     assert(ret == TRUE);
 }
 
-void AudioMgr::Stop(int voice)
+void AXManager::Stop(int voice)
 {
     if (m_shutdown)
         return;
@@ -212,7 +214,7 @@ void AudioMgr::Stop(int voice)
     assert(ret == TRUE);
 }
 
-void AudioMgr::Restart(int voice)
+void AXManager::Restart(int voice)
 {
     if (m_shutdown)
         return;
@@ -236,7 +238,7 @@ void AudioMgr::Restart(int voice)
     assert(ret == TRUE);
 }
 
-void AudioMgr::ChangeMarker(int voice, u32 marker)
+void AXManager::ChangeMarker(int voice, u32 marker)
 {
     if (m_shutdown)
         return;
@@ -261,7 +263,7 @@ void AudioMgr::ChangeMarker(int voice, u32 marker)
     assert(ret == TRUE);
 }
 
-void AudioMgr::InternalInitVoice(
+void AXManager::InternalInitVoice(
   int voice, u32 volume, bool tvLeft, bool tvRight, bool drcLeft, bool drcRight)
 {
     assert(u32(voice) < m_voices.size());
@@ -311,7 +313,7 @@ void AudioMgr::InternalInitVoice(
     AXVoiceEnd(vc->m_voice);
 }
 
-void AudioMgr::InternalVoiceSetOffsets(Voice* vc, bool loop)
+void AXManager::InternalVoiceSetOffsets(Voice* vc, bool loop)
 {
     assert(vc != nullptr);
 
@@ -339,7 +341,7 @@ void AudioMgr::InternalVoiceSetOffsets(Voice* vc, bool loop)
     AXSetVoiceSrcType(vc->m_voice, 1);
 }
 
-void AudioMgr::executeThread()
+void AXManager::executeThread()
 {
     if (AXIsInit() == TRUE) {
         LOG(LogAudio, "AX is already initialized, restarting...");
@@ -369,7 +371,7 @@ void AudioMgr::executeThread()
         }
 
         if (msg.args[0] == MSG_SHUTDOWN) {
-            LOG(LogAudio, "Shutting down AudioMgr");
+            LOG(LogAudio, "Shutting down AXManager");
 
             for (u32 i = 0; i < m_voices.size(); i++) {
                 if (m_voices[i].m_voice != nullptr)
@@ -613,14 +615,14 @@ void AudioMgr::executeThread()
     }
 }
 
-void AudioMgr::AXFrameCallbackFunc()
+void AXManager::AXFrameCallbackFunc()
 {
     OSMessage msg = {
       .message = nullptr,
       .args = {MSG_AXFRAME},
     };
 
-    auto obj = AudioMgr::s_instance;
+    auto obj = AXManager::s_instance;
     assert(obj != nullptr);
 
     auto ret =

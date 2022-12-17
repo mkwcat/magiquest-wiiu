@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "Page_Movie.hpp"
-#include "AudioMgr.hpp"
+#include "AXManager.hpp"
 #include "System.hpp"
 #include "Util.hpp"
 #include <cstdio>
@@ -127,7 +127,7 @@ void Page_Movie::process()
         started = true;
         LOG(LogAudio, "Making an audio player");
 
-        auto ax = AudioMgr::s_instance;
+        auto ax = AXManager::s_instance;
 
         voiceReset = ax->AcquireVoice(
           0x30000000, true, true, true, true, 48000, true, false);
@@ -156,15 +156,15 @@ void Page_Movie::process()
     Lock lock(m_mutex);
 
     if (m_manaSound != ManaSound::None) {
-        AudioMgr::s_instance->Stop(voiceReset);
-        AudioMgr::s_instance->Stop(voiceDown);
+        AXManager::s_instance->Stop(voiceReset);
+        AXManager::s_instance->Stop(voiceDown);
 
         if (m_manaSound == ManaSound::ManaReset) {
-            AudioMgr::s_instance->Restart(voiceReset);
-            AudioMgr::s_instance->Start(voiceReset);
+            AXManager::s_instance->Restart(voiceReset);
+            AXManager::s_instance->Start(voiceReset);
         } else if (m_manaSound == ManaSound::ManaDown) {
-            AudioMgr::s_instance->Restart(voiceDown);
-            AudioMgr::s_instance->Start(voiceDown);
+            AXManager::s_instance->Restart(voiceDown);
+            AXManager::s_instance->Start(voiceDown);
         }
 
         m_manaSound = ManaSound::None;

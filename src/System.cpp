@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "System.hpp"
-#include "AudioMgr.hpp"
+#include "AXManager.hpp"
 #include "Exception.hpp"
 #include <cassert>
 #include <coreinit/core.h>
@@ -91,7 +91,7 @@ System::System()
 
 System::~System()
 {
-    AudioMgr::s_instance->Shutdown();
+    AXManager::s_instance->Shutdown();
 
     for (auto set : m_pages) {
         delete set.element;
@@ -102,7 +102,7 @@ System::~System()
         s_instance = nullptr;
     }
 
-    delete AudioMgr::s_instance;
+    delete AXManager::s_instance;
 
     LOG(LogSystem, "Leaving application");
 }
@@ -407,7 +407,7 @@ int main(int argc, char** argv)
     libgui_memoryInitialize();
 
     // Create the audio manager
-    new AudioMgr();
+    new AXManager();
 
     // Initialize random state
     srand(OSGetSystemTime());

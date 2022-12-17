@@ -1,5 +1,5 @@
 #include "AXVoiceStream.hpp"
-#include "AudioMgr.hpp"
+#include "AXManager.hpp"
 #include <cassert>
 
 AXVoiceStream::AXVoiceStream(u32 bufferSize, u32 bufferCount)
@@ -13,8 +13,8 @@ AXVoiceStream::AXVoiceStream(u32 bufferSize, u32 bufferCount)
 
 AXVoiceStream::~AXVoiceStream()
 {
-    if (AudioMgr::s_instance && m_voice != -1) {
-        AudioMgr::s_instance->FreeVoice(m_voice);
+    if (AXManager::s_instance && m_voice != -1) {
+        AXManager::s_instance->FreeVoice(m_voice);
         m_voice = -1;
     }
 }
@@ -22,7 +22,7 @@ AXVoiceStream::~AXVoiceStream()
 void AXVoiceStream::Init(u32 volume, bool tvLeft, bool tvRight, bool drcLeft,
   bool drcRight, u32 sampleRate)
 {
-    auto ax = AudioMgr::s_instance;
+    auto ax = AXManager::s_instance;
 
     if (m_voice != -1) {
         ax->FreeVoice(m_voice);
@@ -72,7 +72,7 @@ void AXVoiceStream::PushBuffer(u16* buffer, u32 sampleCount)
         return;
     }
 
-    AudioMgr::s_instance->PushBuffer(m_voice, buffer, sampleCount, 0);
+    AXManager::s_instance->PushBuffer(m_voice, buffer, sampleCount, 0);
 }
 
 void AXVoiceStream::Wakeup()
@@ -96,7 +96,7 @@ void AXVoiceStream::Start()
         return;
     }
 
-    AudioMgr::s_instance->Start(m_voice);
+    AXManager::s_instance->Start(m_voice);
 }
 
 void AXVoiceStream::Stop()
@@ -105,5 +105,5 @@ void AXVoiceStream::Stop()
         return;
     }
 
-    AudioMgr::s_instance->Stop(m_voice);
+    AXManager::s_instance->Stop(m_voice);
 }

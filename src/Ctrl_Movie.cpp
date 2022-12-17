@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "Ctrl_Movie.hpp"
-#include "AudioMgr.hpp"
 #include "System.hpp"
 #include "yuv2rgb.h"
 #include <algorithm>

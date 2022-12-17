@@ -1,4 +1,4 @@
-// AudioMgr.hpp
+// AXManager.hpp
 //   Written by Palapeli
 //
 // SPDX-License-Identifier: GPL-2.0-or-later
@@ -13,15 +13,15 @@
 #include <sndcore2/core.h>
 #include <sndcore2/voice.h>
 
-class AudioMgr : public CThread
+class AXManager : public CThread
 {
 public:
-    static AudioMgr* s_instance;
+    static AXManager* s_instance;
 
     static constexpr u32 MaxVoiceCount = 8;
 
-    AudioMgr();
-    ~AudioMgr();
+    AXManager();
+    ~AXManager();
 
     /**
      * Create a new voice to be managed by the caller.
