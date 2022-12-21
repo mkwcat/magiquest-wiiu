@@ -6,11 +6,9 @@
 #pragma once
 
 #include "Util.hpp"
-#include "Wand.hpp"
 #include <array>
 #include <gctypes.h>
 #include <gui/GuiElement.h>
-#include <gui/GuiFrame.h>
 #include <gui/GuiImage.h>
 #include <gui/GuiImageData.h>
 #include <gui/VPadController.h>
@@ -18,6 +16,8 @@
 #include <vector>
 
 class CVideo;
+
+class Wand;
 
 class System : public CThread
 {
@@ -182,7 +182,7 @@ protected:
     GuiImageData m_imgCursorData;
     GuiImage m_imgCursor;
     s32 m_imgCursorTimer;
-    Wand m_wand;
+    Wand* m_wand;
 
     OSMutex m_fileMutex;
 

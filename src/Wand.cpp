@@ -49,6 +49,9 @@ Wand::Wand()
     m_casted = false;
     m_timer = 20;
     m_castPhase = -1;
+
+    // Enable Wii remotes
+    KPADInit();
 }
 
 Wand::~Wand()

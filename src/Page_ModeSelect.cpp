@@ -10,35 +10,22 @@
 #include "Page_Movie.hpp"
 
 Page_ModeSelect::Page_ModeSelect()
-  : m_title(nullptr)
-  , m_bannerTouchDuel(nullptr)
-  , m_btnTouchDuel(520, 200)
-  , m_bannerCastDuel(nullptr)
+  : m_btnTouchDuel(520, 200)
   , m_btnCastDuel(520, 200)
-  , m_bannerRealWand(nullptr)
   , m_btnRealWand(520, 200)
 {
 }
 
 void Page_ModeSelect::Init()
 {
-    Lock l(sys()->FileMutex());
-
-    m_titleData.loadImageFromFile(RES_ROOT "/Image/mqTitleSelectCastMode.png",
-      GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
-    m_title.setImageData(&m_titleData);
-
+    m_title.Load(RES_ROOT "/Image/mqTitleSelectCastMode.png");
     m_title.setPosition(0, 370);
     m_title.setScaleX(1.8);
     m_title.setScaleY(1.8);
 
     append(&m_title);
 
-    m_bannerTouchDuelData.loadImageFromFile(RES_ROOT
-      "/Image/mqBannerTouchDuel.png",
-      GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
-    m_bannerTouchDuel.setImageData(&m_bannerTouchDuelData);
-
+    m_bannerTouchDuel.Load(RES_ROOT "/Image/mqBannerTouchDuel.png");
     m_bannerTouchDuel.setScaleX(300 / m_bannerTouchDuel.getHeight());
     m_bannerTouchDuel.setScaleY(300 / m_bannerTouchDuel.getHeight());
     m_btnTouchDuel.setImage(&m_bannerTouchDuel);
@@ -49,11 +36,7 @@ void Page_ModeSelect::Init()
 
     append(&m_btnTouchDuel);
 
-    m_bannerCastDuelData.loadImageFromFile(RES_ROOT
-      "/Image/mqBannerCastDuel.png",
-      GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
-    m_bannerCastDuel.setImageData(&m_bannerCastDuelData);
-
+    m_bannerCastDuel.Load(RES_ROOT "/Image/mqBannerCastDuel.png");
     m_bannerCastDuel.setScaleX(300 / m_bannerCastDuel.getHeight());
     m_bannerCastDuel.setScaleY(300 / m_bannerCastDuel.getHeight());
     m_btnCastDuel.setImage(&m_bannerCastDuel);
@@ -64,11 +47,7 @@ void Page_ModeSelect::Init()
 
     append(&m_btnCastDuel);
 
-    m_bannerRealWandData.loadImageFromFile(RES_ROOT
-      "/Image/mqBannerTouchDuelRealWand.png",
-      GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
-    m_bannerRealWand.setImageData(&m_bannerRealWandData);
-
+    m_bannerRealWand.Load(RES_ROOT "/Image/mqBannerTouchDuelRealWand.png");
     m_bannerRealWand.setScaleX(300 / m_bannerRealWand.getHeight());
     m_bannerRealWand.setScaleY(300 / m_bannerRealWand.getHeight());
     m_btnRealWand.setImage(&m_bannerRealWand);

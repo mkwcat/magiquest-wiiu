@@ -5,10 +5,10 @@
 
 #pragma once
 
+#include "Ctrl_Image.hpp"
 #include "System.hpp"
 #include <gui/GuiButton.h>
 #include <gui/GuiFrame.h>
-#include <gui/GuiImage.h>
 
 class Page_ModeSelect : public GuiFrame, public sigslot::has_slots<>
 {
@@ -37,19 +37,15 @@ private:
 private:
     bool m_initialized = false;
 
-    GuiImage m_title;
-    GuiImageData m_titleData;
+    Ctrl_Image m_title;
 
-    GuiImage m_bannerTouchDuel;
-    GuiImageData m_bannerTouchDuelData;
+    Ctrl_Image m_bannerTouchDuel;
     GuiButton m_btnTouchDuel;
 
-    GuiImage m_bannerCastDuel;
-    GuiImageData m_bannerCastDuelData;
+    Ctrl_Image m_bannerCastDuel;
     GuiButton m_btnCastDuel;
 
-    GuiImage m_bannerRealWand;
-    GuiImageData m_bannerRealWandData;
+    Ctrl_Image m_bannerRealWand;
     GuiButton m_btnRealWand;
 
     GuiTrigger m_touchTrigger{GuiTrigger::CHANNEL_1, GuiTrigger::VPAD_TOUCH};

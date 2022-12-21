@@ -6,6 +6,7 @@
 #include "System.hpp"
 #include "AXManager.hpp"
 #include "Exception.hpp"
+#include "Wand.hpp"
 #include <cassert>
 #include <coreinit/core.h>
 #include <coreinit/dynload.h>
@@ -13,7 +14,6 @@
 #include <gui/memory.h>
 #include <gui/sounds/SoundHandler.hpp>
 #include <gui/video/CVideo.h>
-#include <padscore/kpad.h>
 #include <proc_ui/procui.h>
 #include <whb/crash.h>
 #include <whb/proc.h>
@@ -80,6 +80,8 @@ System::System()
 
     OSInitMutexEx(&m_fileMutex, "System::m_fileMutex");
 
+    m_wand = new Wand();
+
     // Construct page objects
     m_pages[u32(PageID::Movie)].element = new Page_Movie();
     m_pages[u32(PageID::Background)].element = new Page_Background();
@@ -93,13 +95,12 @@ System::System()
     // Disable display
     m_video->tvEnable(false);
     m_video->drcEnable(false);
-
-    // Enable Wii remotes
-    KPADInit();
 }
 
 System::~System()
 {
+    LOG(LogSystem, "Leaving application");
+
     AXManager::s_instance->Shutdown();
 
     for (auto set : m_pages) {
@@ -112,8 +113,9 @@ System::~System()
     }
 
     delete AXManager::s_instance;
+    delete m_wand;
 
-    LOG(LogSystem, "Leaving application");
+    LOG(LogSystem, "Successfully shutdown");
 }
 
 void System::Start()
@@ -281,10 +283,10 @@ bool System::Tick()
     float curX, curY, curZ;
 
     bool curValid;
-    m_wand.Update(&curX, &curY, &curZ, &curValid);
+    m_wand->Update(&curX, &curY, &curZ, &curValid);
 
-    if (m_wand.IsCast()) {
-        if (m_wand.GetCastMode() == Wand::CastMode::WiiRemoteCastRune &&
+    if (m_wand->IsCast()) {
+        if (m_wand->GetCastMode() == Wand::CastMode::WiiRemoteCastRune &&
             curValid) {
             m_imgCursorTimer = 60;
             m_imgCursor.setPosition(curX, curY);
@@ -294,7 +296,8 @@ bool System::Tick()
         for (u32 i = 0; i < PageCount; i++) {
             auto handler = dynamic_cast<WandHandler*>(m_pages[i].element);
             if (handler != nullptr)
-                handler->Cast(m_wand.GetCastMode(), curValid, curX, curY, curZ);
+                handler->Cast(
+                  m_wand->GetCastMode(), curValid, curX, curY, curZ);
         }
     }
 
@@ -346,7 +349,7 @@ void System::WaitVSync()
 
 Wand* System::GetWand()
 {
-    return &m_wand;
+    return m_wand;
 }
 
 #include <coreinit/debug.h>

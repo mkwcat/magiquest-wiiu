@@ -5,13 +5,12 @@
 
 #pragma once
 
+#include "Ctrl_Image.hpp"
 #include "System.hpp"
 #include "Util.hpp"
 #include <cstring>
-#include <functional>
 #include <gctypes.h>
 #include <gui/GuiButton.h>
-#include <utility>
 #include <vector>
 
 class Ctrl_Spell : public GuiButton, public sigslot::has_slots<>
@@ -37,17 +36,12 @@ public:
 
         // Construct loop
         for (u32 i = 0; i < imageCount; i++) {
-            m_images.push_back(
-              std::make_pair(GuiImageData(), GuiImage(nullptr)));
+            m_images.push_back(Ctrl_Image());
         }
 
         // Init loop
         for (u32 i = 0; i < imageCount; i++) {
-            Lock l(sys()->FileMutex());
-
-            m_images[i].first.loadImageFromFile(images[i],
-              GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
-            m_images[i].second.setImageData(&m_images[i].first);
+            m_images[i].Load(images[i]);
         }
     }
 
@@ -61,7 +55,7 @@ public:
         m_notSelectedImg = notSelectedImg;
         m_notSelectableImg = notSelectableImg;
 
-        setImage(&m_images[m_notSelectedImg].second);
+        setImage(&m_images[m_notSelectedImg]);
 
         holdable = true;
         clickable = true;
@@ -79,13 +73,13 @@ public:
 
     void Select()
     {
-        setImage(&m_images[m_selectedImg].second);
+        setImage(&m_images[m_selectedImg]);
         m_selected = true;
     }
 
     void Deselect()
     {
-        setImage(&m_images[m_notSelectedImg].second);
+        setImage(&m_images[m_notSelectedImg]);
         m_selected = false;
     }
 
@@ -99,10 +93,10 @@ public:
         m_selectable = value;
 
         if (!m_selectable) {
-            setImage(&m_images[m_notSelectableImg].second);
+            setImage(&m_images[m_notSelectableImg]);
             m_selected = false;
         } else {
-            setImage(&m_images[m_notSelectedImg].second);
+            setImage(&m_images[m_notSelectedImg]);
             m_selected = false;
         }
     }
@@ -143,7 +137,7 @@ private:
     // Spell name
     char m_name[32];
 
-    std::vector<std::pair<GuiImageData, GuiImage>> m_images;
+    std::vector<Ctrl_Image> m_images;
 
     GuiTrigger m_touchTrigger{GuiTrigger::CHANNEL_1, GuiTrigger::VPAD_TOUCH};
 
