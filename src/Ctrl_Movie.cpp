@@ -567,6 +567,7 @@ bool Ctrl_Movie::Decoder::OpenMovie(FILE* movieFile)
     }
 
     m_sample = 0;
+    m_frameNum = 0;
 
     // XXX Getting the size could probably be done better (and faster) with
     // fstat
@@ -729,8 +730,9 @@ void Ctrl_Movie::Decoder::H264FrameCallback(H264DecodeOutput* output)
     if (output->frameCount == 1) {
         msg.args[1] = output->decodeResults[0]->width << 16;
         msg.args[1] |= output->decodeResults[0]->height & 0xFFFF;
-        msg.args[2] = obj->m_sample;
     }
+
+    msg.args[2] = obj->m_frameNum - 1;
 
     auto ret =
       OSSendMessage(obj->m_inputRespQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
@@ -745,38 +747,99 @@ bool Ctrl_Movie::Decoder::DecodeFrame(
     if (m_tr == nullptr || m_file == nullptr)
         return false;
 
-    if (m_sample >= m_tr->sample_count)
-        return false;
-
-    u32 byteCount, timestamp, duration;
-    auto offset =
-      MP4D_frame_offset(&m_mp4, 0, m_sample, &byteCount, &timestamp, &duration);
-
-    if (offset == 0 || byteCount == 0)
-        return false;
-
-    auto sampleData = std::make_unique<u8[]>(byteCount);
-    if (!Read(sampleData.get(), offset, byteCount)) {
-        LOG(LogMP4, "Failed to read from stream");
-        return false;
-    }
-
-    auto bitstream = sampleData.get();
-
-    for (u32 tempOffset = 0; tempOffset < byteCount;) {
-        u32 size = (*(u32*) (bitstream + tempOffset)) + 4;
-        if (size > byteCount || size < 5) {
-            LOG(LogMP4, "Invalid frame size: %08X", size);
-            break;
+    const void* sps = nullptr;
+    s32 spsSize = 0;
+    const void* pps = nullptr;
+    s32 ppsSize = 0;
+    if (m_sample == 0) {
+        sps = MP4D_read_sps(&m_mp4, 0, 0, &spsSize);
+        if (sps == nullptr) {
+            LOG(LogMP4, "Failed to read stream SPS");
+            return false;
         }
 
-        // Change the size field into the H.264 sync data
-        bitstream[tempOffset] = 0;
-        bitstream[tempOffset + 1] = 0;
-        bitstream[tempOffset + 2] = 0;
-        bitstream[tempOffset + 3] = 1;
-        tempOffset += size;
+        pps = MP4D_read_pps(&m_mp4, 0, 0, &ppsSize);
+        if (pps == nullptr) {
+            LOG(LogMP4, "Failed to read stream PPS");
+            return false;
+        }
     }
+
+    u8* bitstream = nullptr;
+    std::unique_ptr<u8[]> sampleData;
+    u32 byteCount, timestamp, duration;
+    int validCount = 0;
+
+    do {
+        if (m_sample >= m_tr->sample_count)
+            return false;
+
+        auto offset = MP4D_frame_offset(
+          &m_mp4, 0, m_sample, &byteCount, &timestamp, &duration);
+
+        if (offset == 0 || byteCount == 0)
+            return false;
+
+        sampleData = std::make_unique<u8[]>(byteCount + spsSize + ppsSize + 8);
+        if (!Read(
+              sampleData.get() + spsSize + ppsSize + 8, offset, byteCount)) {
+            LOG(LogMP4, "Failed to read from stream");
+            return false;
+        }
+
+        bitstream = sampleData.get() + spsSize + ppsSize + 8;
+
+        validCount = 0;
+        for (u32 tempOffset = 0; tempOffset < byteCount;) {
+            u32 size = (*(u32*) (bitstream + tempOffset)) + 4;
+            if (size > byteCount || size < 5) {
+                LOG(LogMP4, "Invalid frame size: %08X", size);
+                validCount = 0;
+                break;
+            }
+
+            // Change the size field into the H.264 sync data
+            bitstream[tempOffset] = 0;
+            bitstream[tempOffset + 1] = 0;
+            bitstream[tempOffset + 2] = 0;
+            bitstream[tempOffset + 3] = 1;
+
+            u8 payloadType = bitstream[tempOffset + 4] & 31;
+            // Ignore non-frame information.
+            if (payloadType != 5 && payloadType != 1) {
+#if 0
+                LOG(LogMP4,
+                  "Skipping payload with type %d, offset %X, size %X (out of "
+                  "%X)",
+                  payloadType, tempOffset, size, byteCount);
+#endif
+                memset(bitstream + tempOffset, 0, size);
+            } else {
+                validCount++;
+            }
+
+            tempOffset += size;
+        }
+
+        if (validCount != 0 && sps && pps) {
+            bitstream = sampleData.get();
+            byteCount += spsSize + ppsSize + 8;
+
+            bitstream[0] = 0;
+            bitstream[1] = 0;
+            bitstream[2] = 0;
+            bitstream[3] = 1;
+            memcpy(bitstream + 4, sps, spsSize);
+
+            bitstream[spsSize + 4] = 0;
+            bitstream[spsSize + 5] = 0;
+            bitstream[spsSize + 6] = 0;
+            bitstream[spsSize + 7] = 1;
+            memcpy(bitstream + spsSize + 8, pps, ppsSize);
+        }
+
+        m_sample++;
+    } while (validCount == 0);
 
     // XXX Should check if the frame can be decoded before attempting to
     // decode
@@ -795,13 +858,14 @@ bool Ctrl_Movie::Decoder::DecodeFrame(
         return false;
     }
 
+    m_frameNum++;
+
     h264err = H264DECExecute(m_memory.get(), nv12Fb);
     if ((h264err & 0xFFFFFF00) != H264_ERROR_OK) {
         LOG(LogMP4, "H264DECExecute error: %X", h264err);
         return false;
     }
 
-    m_sample++;
     return true;
 }
 

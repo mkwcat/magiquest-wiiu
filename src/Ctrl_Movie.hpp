@@ -265,6 +265,7 @@ private:
         MP4D_demux_t m_mp4;
         MP4D_track_t* m_tr;
         u32 m_sample;
+        u32 m_frameNum;
         std::unique_ptr<u8[]> m_sampleData;
 
         static constexpr int MaxCacheSize = 4096 * 2;
