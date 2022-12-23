@@ -10,8 +10,7 @@
 #include <cstdio>
 
 Page_Movie::Page_Movie()
-  : m_imgManaLeft(nullptr)
-  , m_imgManaRight(nullptr)
+  : m_movieImg(nullptr)
 {
     OSInitMutexEx(&m_mutex, "Page_Movie::m_mutex");
 
@@ -35,7 +34,7 @@ Page_Movie::Page_Movie()
         m_encounter->NextFrame(frame);
     });
 
-    append(&m_movie);
+    append(&m_movieImg);
 
     for (u32 i = 0; i < 17; i++) {
         Lock l(sys()->FileMutex());
@@ -43,30 +42,9 @@ Page_Movie::Page_Movie()
         char path[64];
         snprintf(path, 64, RES_ROOT "/Image/mana_l%u.png", i);
 
-        m_manaLeft[i].loadImageFromFile(
-          path, GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
-
-        snprintf(path, 64, RES_ROOT "/Image/mana_r%u.png", i);
-
-        m_manaRight[i].loadImageFromFile(
+        m_manaImg[i].loadImageFromFile(
           path, GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
     }
-
-    m_imgManaLeft.setImageData(GetManaImage(0, 0));
-    m_imgManaRight.setImageData(GetManaImage(1, 0));
-
-    m_imgManaLeft.setPosition(-(1920 / 2), -((1080 - 880) / 2));
-    m_imgManaLeft.setScaleX(880 / m_imgManaLeft.getHeight());
-    m_imgManaLeft.setScaleY(880 / m_imgManaLeft.getHeight());
-    m_imgManaLeft.setAlignment(ALIGN_LEFT);
-
-    m_imgManaRight.setPosition((1920 / 2), -((1080 - 880) / 2));
-    m_imgManaRight.setScaleX(880 / m_imgManaRight.getHeight());
-    m_imgManaRight.setScaleY(880 / m_imgManaRight.getHeight());
-    m_imgManaRight.setAlignment(ALIGN_RIGHT);
-
-    append(&m_imgManaLeft);
-    append(&m_imgManaRight);
 
     m_movie.ChangeMovie(RES_ROOT "/Movie/Xavier/XavierIdle.mp4");
 }
@@ -75,21 +53,13 @@ Page_Movie::~Page_Movie()
 {
 }
 
-GuiImageData* Page_Movie::GetManaImage(u8 side, u8 value)
+GuiImageData* Page_Movie::GetManaImage(u8 value)
 {
     if (value > 16) {
         return nullptr;
     }
 
-    if (side == 0) {
-        return &m_manaLeft[value];
-    }
-
-    if (side == 1) {
-        return &m_manaRight[value];
-    }
-
-    return nullptr;
+    return &m_manaImg[value];
 }
 
 void Page_Movie::EndMovie()
@@ -106,11 +76,6 @@ void Page_Movie::SetEncounter(Encounter* encounter)
 
 void Page_Movie::ManaUpdate(u8 side, u8 value)
 {
-    if (side == 0)
-        m_imgManaLeft.setImageData(GetManaImage(0, value));
-    else if (side == 1)
-        m_imgManaRight.setImageData(GetManaImage(1, value));
-
     if (value == 0)
         m_manaSound = ManaSound::ManaReset;
 
@@ -122,11 +87,10 @@ void Page_Movie::ManaUpdate(u8 side, u8 value)
 
 void Page_Movie::process()
 {
-    static bool started = false;
     static int voiceReset = -1;
     static int voiceDown = -1;
-    if (!started) {
-        started = true;
+    if (!m_initialized) {
+        m_initialized = true;
 
         auto ax = AXManager::s_instance;
 
@@ -151,6 +115,12 @@ void Page_Movie::process()
 
         ax->PushBuffer(voiceDown, (u16*) data, dataLen / 2, false);
     }
+
+    m_movie.process();
+
+    m_movieImg.setImageData(&m_movie);
+    m_movieImg.setScaleX(1440.0 / m_movieImg.getWidth());
+    m_movieImg.setScaleY(1080.0 / m_movieImg.getHeight());
 
     GuiFrame::process();
 

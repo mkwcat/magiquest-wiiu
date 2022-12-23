@@ -12,43 +12,21 @@
 /**
  * Blank image for GuiImageData
  */
-static const u8 blankImg[] = {
-  0x00,
-  0x00,
-  0x02,
-  0x00,
-  0x00,
-  0x00,
-  0x00,
-  0x00,
-  0x00,
-  0x00,
-  0x00,
-  0x00,
-  0x01,
-  0x00,
-  0x01,
-  0x00,
-  0x20,
-  0x28,
-  0xFF,
-  0xFF,
-  0xFF,
-  0x00,
-};
+static const u8 blankImg[] = {0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x20, 0x28, 0xFF, 0xFF, 0xFF,
+  0x00};
 
 Ctrl_Movie::Ctrl_Movie()
-  : m_image(nullptr)
-  , m_imageData(blankImg, sizeof(blankImg), GX2_TEX_CLAMP_MODE_CLAMP,
-      GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8)
+  : GuiImageData(blankImg, sizeof(blankImg), GX2_TEX_CLAMP_MODE_CLAMP,
+    GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8)
   , m_voiceL{
-      {32000, 4},
-      {32000, 4},
-    }
+    {32000, 4},
+    {32000, 4},
+  }
   , m_voiceR{
-      {32000, 4},
-      {32000, 4},
-    }
+    {32000, 4},
+    {32000, 4},
+  }
   , m_decoder(this, 100, 40, MaxWidth, MaxHeight)
 {
     OSInitMessageQueueEx(
@@ -63,10 +41,14 @@ Ctrl_Movie::Ctrl_Movie()
     OSInitMessageQueueEx(&m_audioNotifyQueue, m_audioNotifyMsg, 4,
       "Ctrl_Movie::m_audioNotifyQueue");
 
-    m_image.setColorIntensity({1.1, 1.1, 1.1, 1});
-
     // Initialize a texture to get the framebuffer size
     GX2Texture tempTex;
+    GX2InitTexture(&tempTex, MaxWidth, MaxHeight, 1, 1,
+      GX2_SURFACE_FORMAT_UNORM_NV12, GX2_SURFACE_DIM_TEXTURE_2D,
+      GX2_TILE_MODE_LINEAR_ALIGNED);
+    assert(tempTex.surface.imageSize != 0);
+    u32 nv12Size = tempTex.surface.imageSize;
+
     GX2InitTexture(&tempTex, MaxWidth, MaxHeight, 1, 1,
       GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8, GX2_SURFACE_DIM_TEXTURE_2D,
       GX2_TILE_MODE_LINEAR_ALIGNED);
@@ -74,8 +56,6 @@ Ctrl_Movie::Ctrl_Movie()
 
     m_fbData = std::unique_ptr<u8>(new (std::align_val_t(256))
         u8[tempTex.surface.imageSize * FrameBufferCount]);
-
-    u32 nv12Size = MaxWidth * MaxHeight + 2 * (MaxWidth * MaxHeight);
 
     m_fbNv12Data = std::unique_ptr<u8>(
       new (std::align_val_t(256)) u8[nv12Size * FrameBufferCount]);
@@ -95,7 +75,7 @@ Ctrl_Movie::Ctrl_Movie()
     // Workaround, GuiImageData doesn't usually allow us to do anything like
     // this. It allocates a GX2Texture when we supply the blank image and then
     // we const_cast our way into accessing it.
-    auto tex = const_cast<GX2Texture*>(m_imageData.getTexture());
+    auto tex = const_cast<GX2Texture*>(getTexture());
     assert(tex != nullptr);
 
     m_savedImageData = tex->surface.image;
@@ -169,7 +149,7 @@ Ctrl_Movie::~Ctrl_Movie()
     m_audioThread.shutdownThread();
 
     // Restore the original data so GuiImageData can free it
-    auto tex = const_cast<GX2Texture*>(m_imageData.getTexture());
+    auto tex = const_cast<GX2Texture*>(getTexture());
     if (tex != nullptr) {
         tex->surface.image = m_savedImageData;
     }
@@ -216,7 +196,7 @@ void Ctrl_Movie::process()
     auto ret = OSReceiveMessage(&m_fbOutQueue, &msg, OS_MESSAGE_FLAGS_NONE);
     assert(ret);
 
-    auto tex = const_cast<GX2Texture*>(m_imageData.getTexture());
+    auto tex = const_cast<GX2Texture*>(getTexture());
     assert(tex != nullptr);
 
     if (tex->surface.image != nullptr) {
@@ -244,15 +224,6 @@ void Ctrl_Movie::process()
 
     GX2Invalidate(
       GX2_INVALIDATE_MODE_CPU_TEXTURE, msg.message, tex->surface.imageSize);
-
-    m_image.setImageData(&m_imageData);
-    m_image.setScaleX(1440.0 / width);
-    m_image.setScaleY(1080.0 / height);
-}
-
-void Ctrl_Movie::draw(CVideo* video)
-{
-    m_image.draw(video);
 }
 
 void Ctrl_Movie::VideoDecodeProc()

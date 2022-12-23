@@ -19,9 +19,8 @@ public:
 
     /**
      * Gets the GuiImageData for the specified mana value.
-     * side: 0 = left, 1 = right
      */
-    GuiImageData* GetManaImage(u8 side, u8 value);
+    GuiImageData* GetManaImage(u8 value);
 
     /**
      * Force ends the movie.
@@ -44,14 +43,14 @@ public:
     void process() override;
 
 protected:
+    bool m_initialized = false;
+
     Ctrl_Movie m_movie;
+    GuiImage m_movieImg;
 
     OSMutex m_mutex;
 
-    GuiImage m_imgManaLeft;
-    GuiImage m_imgManaRight;
-    GuiImageData m_manaLeft[17];
-    GuiImageData m_manaRight[17];
+    GuiImageData m_manaImg[17];
 
     enum class ManaSound {
         None,

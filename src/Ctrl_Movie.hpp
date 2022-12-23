@@ -19,7 +19,7 @@
 #include <tremor/ivorbiscodec.h>
 #include <tremor/ivorbisfile.h>
 
-class Ctrl_Movie : public GuiElement
+class Ctrl_Movie : public GuiImageData
 {
 public:
     Ctrl_Movie();
@@ -33,11 +33,6 @@ public:
      * GuiElement process.
      */
     void process();
-
-    /**
-     * GuiElement draw.
-     */
-    void draw(CVideo* video);
 
     /**
      * Video decoding thread entry.
@@ -120,8 +115,6 @@ private:
     DecoderThread m_videoNV12Thread{10};
     DecoderThread m_audioThread{1};
 
-    GuiImage m_image;
-    GuiImageData m_imageData;
     std::unique_ptr<u8> m_rgbFrame;
     u32 m_rgbFrameSize;
 
