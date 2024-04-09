@@ -6,6 +6,7 @@
 #include "System.hpp"
 #include "AXManager.hpp"
 #include "Exception.hpp"
+#include "ResourceManager.hpp"
 #include "Wand.hpp"
 #include <cassert>
 #include <coreinit/core.h>
@@ -82,12 +83,15 @@ System::System()
 
     m_wand = new Wand();
 
+    // Initialize the resource manager
+    ResourceManager::Init();
+
     // Construct page objects
     m_pages[u32(PageID::Movie)].element = new Page_Movie();
     m_pages[u32(PageID::Background)].element = new Page_Background();
     m_pages[u32(PageID::ModeSelect)].element = new Page_ModeSelect();
     m_pages[u32(PageID::CastModeConfirm)].element = new Page_CastModeConfirm();
-    m_pages[u32(PageID::TouchDuel)].element = new Page_DuelXavier();
+    m_pages[u32(PageID::TouchDuel)].element = new Page_DuelGolem();
 
     m_imgCursorTimer = 0;
     m_frameId = 0;
@@ -104,15 +108,20 @@ System::~System()
     AXManager::s_instance->Shutdown();
 
     for (auto set : m_pages) {
+        LOG(LogSystem, "Deleting page %d", set.id);
         delete set.element;
+        LOG(LogSystem, "Deleted page %d", set.id);
         set.element = nullptr;
     }
+
+    LOG(LogSystem, "Deleted all pages");
 
     if (s_instance == this) {
         s_instance = nullptr;
     }
 
     delete AXManager::s_instance;
+    LOG(LogSystem, "Deleted AXManager");
     delete m_wand;
 
     LOG(LogSystem, "Successfully shutdown");
@@ -127,14 +136,17 @@ void System::Start()
 
 void System::executeThread()
 {
-    ShowPage(System::PageID::Movie, System::Display::TV);
+    ShowPage(System::PageID::Movie, System::Display::DRC);
     ShowPage(System::PageID::Background, System::Display::DRC);
     ShowPage(System::PageID::ModeSelect, System::Display::DRC);
 
     WaitVSync();
 
-    m_imgCursorData.loadImageFromFile(RES_ROOT "/Image/cursor.png",
-      GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
+    {
+        Lock l(sys()->FileMutex());
+        m_imgCursorData.loadImageFromFile(RES_ROOT "/Image/System/Cursor.png",
+          GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
+    }
     m_imgCursor.setImageData(&m_imgCursorData);
 
     ProcUIRegisterCallback(
@@ -182,19 +194,17 @@ void* System::RipFile(const char* path, u32* length)
 
     auto file = fopen(path, "rb");
 
-    if (file == nullptr)
+    if (file == nullptr) {
+        LOG(LogSystem, "Failed to open %s", path);
         return nullptr;
+    }
 
     fseek(file, 0, SEEK_END);
-
     u32 filesize = ftell(file);
-
     fseek(file, 0, SEEK_SET);
 
     u8* data = new (std::align_val_t(256)) u8[filesize];
-
     auto ret = fread(data, filesize, 1, file);
-
     fclose(file);
 
     if (ret != 1) {
@@ -202,8 +212,9 @@ void* System::RipFile(const char* path, u32* length)
         data = nullptr;
     }
 
-    if (length != nullptr)
+    if (length != nullptr) {
         *length = filesize;
+    }
 
     return data;
 }
@@ -352,60 +363,6 @@ Wand* System::GetWand()
     return m_wand;
 }
 
-#include <coreinit/debug.h>
-
-static void getStackTrace(uint32_t* stackPtr)
-{
-    int i;
-    char name[256];
-
-    WHBLogPrintf("Address:      Back Chain    LR Save");
-
-    for (i = 0; i < 16; ++i) {
-        uint32_t addr;
-
-        if (!stackPtr || (uintptr_t) stackPtr == 0x1 ||
-            (uintptr_t) stackPtr == 0xFFFFFFFF) {
-            break;
-        }
-
-        addr = OSGetSymbolName(stackPtr[1], name, sizeof(name));
-        if (addr) {
-            WHBLogPrintf("0x%08x:   0x%08x    0x%08x %s+0x%x",
-              (uintptr_t) stackPtr, (uintptr_t) stackPtr[0],
-              (uintptr_t) stackPtr[1], name, (uintptr_t) (stackPtr[1] - addr));
-        } else {
-            WHBLogPrintf("0x%08x:   0x%08x    0x%08x", (uintptr_t) stackPtr,
-              (uintptr_t) stackPtr[0], (uintptr_t) stackPtr[1]);
-        }
-
-        stackPtr = (uint32_t*) *stackPtr;
-    }
-}
-
-extern "C" void __assert_func(
-  const char* file, int line, const char* function, const char* condition)
-{
-    WHBLogPrintf("%s:%d   ASSERTION FAILED (%s)", file, line, condition);
-    WHBProcShutdown();
-    exit(EXIT_FAILURE);
-}
-
-extern "C" void abort()
-{
-    u32 lr = 0;
-    u32 sp = 0;
-    asm volatile("mflr %0" : "=r"(lr));
-    asm volatile("mr %0, 1" : "=r"(sp));
-
-    WHBLogPrintf("Abort was called! LR = %08X", lr);
-
-    getStackTrace(&sp);
-
-    WHBProcShutdown();
-    exit(EXIT_FAILURE);
-}
-
 int main(int argc, char** argv)
 {
     WHBProcInit();
@@ -414,9 +371,10 @@ int main(int argc, char** argv)
     WHBLogUdpInit();
 #endif
 
-    chdir("wiiu/apps/magiquest-wiiu/content");
-
     Exception::Init();
+
+    chdir("wiiu/apps/magiquest-wiiu/content");
+    // chdir("/vol/content");
 
     libgui_memoryInitialize();
 

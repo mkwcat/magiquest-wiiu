@@ -7,9 +7,11 @@
 #include <coreinit/exception.h>
 #include <coreinit/thread.h>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <stdarg.h>
 #include <whb/log.h>
+#include <whb/proc.h>
 
 #define THREAD_STACK_SIZE (4096)
 static OSThread s_crashThread;
@@ -132,4 +134,56 @@ s32 Exception::CrashReportThread(int argc, const char** argv)
 
     while (true) {
     }
+}
+
+static void getStackTrace(uint32_t* stackPtr)
+{
+    int i;
+    char name[256];
+
+    WHBLogPrintf("Address:      Back Chain    LR Save");
+
+    for (i = 0; i < 16; ++i) {
+        uint32_t addr;
+
+        if (!stackPtr || (uintptr_t) stackPtr == 0x1 ||
+            (uintptr_t) stackPtr == 0xFFFFFFFF) {
+            break;
+        }
+
+        addr = OSGetSymbolName(stackPtr[1], name, sizeof(name));
+        if (addr) {
+            WHBLogPrintf("0x%08x:   0x%08x    0x%08x %s+0x%x",
+              (uintptr_t) stackPtr, (uintptr_t) stackPtr[0],
+              (uintptr_t) stackPtr[1], name, (uintptr_t) (stackPtr[1] - addr));
+        } else {
+            WHBLogPrintf("0x%08x:   0x%08x    0x%08x", (uintptr_t) stackPtr,
+              (uintptr_t) stackPtr[0], (uintptr_t) stackPtr[1]);
+        }
+
+        stackPtr = (uint32_t*) *stackPtr;
+    }
+}
+
+extern "C" void __assert_func(
+  const char* file, int line, const char* function, const char* condition)
+{
+    WHBLogPrintf("%s:%d   ASSERTION FAILED (%s)", file, line, condition);
+    WHBProcShutdown();
+    exit(EXIT_FAILURE);
+}
+
+extern "C" void abort()
+{
+    u32 lr = 0;
+    u32 sp = 0;
+    asm volatile("mflr %0" : "=r"(lr));
+    asm volatile("mr %0, 1" : "=r"(sp));
+
+    WHBLogPrintf("Abort was called! LR = %08X", lr);
+
+    getStackTrace(&sp);
+
+    WHBProcShutdown();
+    exit(EXIT_FAILURE);
 }

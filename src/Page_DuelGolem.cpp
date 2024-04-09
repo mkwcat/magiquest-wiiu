@@ -8,8 +8,6 @@
 #include <cstdlib>
 
 Page_DuelGolem::Page_DuelGolem()
-  : m_imgManaLeft(nullptr)
-  , m_imgManaRight(nullptr)
 {
     m_currentPhase = Phase::Idle;
     m_nextPhase = Phase::Idle;
@@ -61,46 +59,54 @@ void Page_DuelGolem::Init()
 
     page->SetEncounter(this);
 
-    m_imgManaLeft.setImageData(page->GetManaImage(0, 0));
-    m_imgManaRight.setImageData(page->GetManaImage(1, 0));
+    m_manaLeft.Update(Ctrl_Mana::Left, 0);
+    m_manaRight.Update(Ctrl_Mana::Right, 0);
 
-    append(&m_imgManaLeft);
-    append(&m_imgManaRight);
+    m_manaLeft.setPosition(-(1920 / 2) + 40, -(1080 / 2) + 35);
+    m_manaLeft.setAlignment(ALIGN_LEFT | ALIGN_BOTTOM);
+    m_manaLeft.setScaleX((1080 / m_manaLeft.getHeight()) * 0.85);
+    m_manaLeft.setScaleY((1080 / m_manaLeft.getHeight()) * 0.85);
 
-    m_imgManaLeft.setPosition(-(1920 / 2), 0);
-    m_imgManaLeft.setAlignment(ALIGN_LEFT);
-    m_imgManaLeft.setScaleX(1080 / m_imgManaLeft.getHeight());
-    m_imgManaLeft.setScaleY(1080 / m_imgManaLeft.getHeight());
+    m_manaRight.setPosition((1920 / 2) - 40, -(1080 / 2) + 35);
+    m_manaRight.setAlignment(ALIGN_RIGHT | ALIGN_BOTTOM);
+    m_manaRight.setScaleX((1080 / m_manaRight.getHeight()) * 0.85);
+    m_manaRight.setScaleY((1080 / m_manaRight.getHeight()) * 0.85);
 
-    m_imgManaRight.setPosition((1920 / 2), 0);
-    m_imgManaRight.setAlignment(ALIGN_RIGHT);
-    m_imgManaRight.setScaleX(1080 / m_imgManaRight.getHeight());
-    m_imgManaRight.setScaleY(1080 / m_imgManaRight.getHeight());
+    append(&m_manaLeft);
+    append(&m_manaRight);
 
     static const char* MagmaImages[] = {
-      [IMG_NOTSELECTED] = RES_ROOT "/Image/Spell_Magma.png",
-      [IMG_SELECTED] = RES_ROOT "/Image/Spell_Magma_Glow.png",
+      [IMG_NOTSELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/Magma.png",
+      [IMG_SELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/MagmaSelected.png",
     };
 
     InitSpell(Spell::Magma, MagmaImages, -600, 0);
 
     static const char* ChiselImages[] = {
-      [IMG_NOTSELECTED] = RES_ROOT "/Image/Spell_Chisel.png",
-      [IMG_SELECTED] = RES_ROOT "/Image/Spell_Chisel_Glow.png",
+      [IMG_NOTSELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/Chisel.png",
+      [IMG_SELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/ChiselSelected.png",
     };
 
     InitSpell(Spell::Chisel, ChiselImages, -200, 0);
 
     static const char* CloudHammerImages[] = {
-      [IMG_NOTSELECTED] = RES_ROOT "/Image/Spell_CloudHammer.png",
-      [IMG_SELECTED] = RES_ROOT "/Image/Spell_CloudHammer_Glow.png",
+      [IMG_NOTSELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/CloudHammer.png",
+      [IMG_SELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/CloudHammerSelected.png",
     };
 
     InitSpell(Spell::CloudHammer, CloudHammerImages, 200, 0);
 
     static const char* ThunderImages[] = {
-      [IMG_NOTSELECTED] = RES_ROOT "/Image/Spell_Thunder.png",
-      [IMG_SELECTED] = RES_ROOT "/Image/Spell_Thunder_Glow.png",
+      [IMG_NOTSELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/Thunder.png",
+      [IMG_SELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/ThunderSelected.png",
     };
 
     InitSpell(Spell::Thunder, ThunderImages, 600, 0);
@@ -116,10 +122,16 @@ void Page_DuelGolem::process()
     auto page = System::GetPageStatic<Page_Movie>();
     assert(page != nullptr);
 
-    m_imgManaLeft.setImageData(page->GetManaImage(0, GetMana(0)));
-    m_imgManaRight.setImageData(page->GetManaImage(1, GetMana(1)));
+    m_manaLeft.Update(Ctrl_Mana::Left, GetMana(Ctrl_Mana::Left));
+    m_manaRight.Update(Ctrl_Mana::Right, GetMana(Ctrl_Mana::Right));
 
     GuiFrame::process();
+}
+
+void Page_DuelGolem::Transition()
+{
+    System::GetPageStatic<Page_Background>()->SetImage(
+      Page_Background::ImageType::TouchDuelGolem);
 }
 
 const char* Page_DuelGolem::NextPhase(Spell castSpell)

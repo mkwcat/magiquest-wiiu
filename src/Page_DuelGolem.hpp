@@ -5,8 +5,10 @@
 
 #pragma once
 
+#include "Ctrl_Mana.hpp"
 #include "Ctrl_Spell.hpp"
 #include "Encounter.hpp"
+#include "Page_Background.hpp"
 #include "System.hpp"
 #include <gui/GuiButton.h>
 #include <gui/GuiFrame.h>
@@ -56,6 +58,11 @@ public:
      */
     void process() override;
 
+    /**
+     * Transition from Encounter.
+     */
+    void Transition() override;
+
 protected:
     const char* NextPhase(Spell castSpell);
 
@@ -84,8 +91,8 @@ protected:
     char m_phaseMoviePath[128];
     bool m_isInputPhase;
 
-    GuiImage m_imgManaLeft;
-    GuiImage m_imgManaRight;
+    Ctrl_Mana m_manaLeft;
+    Ctrl_Mana m_manaRight;
 
     bool m_started;
 };

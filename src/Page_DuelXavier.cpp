@@ -4,22 +4,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "Page_DuelXavier.hpp"
+#include "Page_Background.hpp"
 #include "Page_Movie.hpp"
 #include <cstdlib>
-
-Page_DuelXavier::Page_DuelXavier()
-  : m_imgManaLeft(nullptr)
-  , m_imgManaRight(nullptr)
-{
-    m_currentPhase = Phase::Idle;
-    m_nextPhase = Phase::Idle;
-    m_isInputPhase = false;
-    m_started = false;
-}
-
-Page_DuelXavier::~Page_DuelXavier()
-{
-}
 
 enum {
     IMG_NOTSELECTED = 0,
@@ -66,78 +53,114 @@ void Page_DuelXavier::Init()
 
     page->SetEncounter(this);
 
-    m_imgManaLeft.setImageData(page->GetManaImage(0, 0));
-    m_imgManaRight.setImageData(page->GetManaImage(1, 0));
+    m_imgManaLeft.Update(Ctrl_Mana::Left, 0);
+    m_imgManaRight.Update(Ctrl_Mana::Right, 0);
+
+    m_imgManaLeft.setPosition(-(1920 / 2) + 40, -(1080 / 2) + 35);
+    m_imgManaLeft.setAlignment(ALIGN_LEFT | ALIGN_BOTTOM);
+    m_imgManaLeft.setScaleX((1080 / m_imgManaLeft.getHeight()) * 0.85);
+    m_imgManaLeft.setScaleY((1080 / m_imgManaLeft.getHeight()) * 0.85);
+
+    m_imgManaRight.setPosition((1920 / 2) - 40, -(1080 / 2) + 35);
+    m_imgManaRight.setAlignment(ALIGN_RIGHT | ALIGN_BOTTOM);
+    m_imgManaRight.setScaleX((1080 / m_imgManaRight.getHeight()) * 0.85);
+    m_imgManaRight.setScaleY((1080 / m_imgManaRight.getHeight()) * 0.85);
 
     append(&m_imgManaLeft);
     append(&m_imgManaRight);
 
-    m_imgManaLeft.setPosition(-(1920 / 2), 0);
-    m_imgManaLeft.setAlignment(ALIGN_LEFT);
-    m_imgManaLeft.setScaleX(1080 / m_imgManaLeft.getHeight());
-    m_imgManaLeft.setScaleY(1080 / m_imgManaLeft.getHeight());
-
-    m_imgManaRight.setPosition((1920 / 2), 0);
-    m_imgManaRight.setAlignment(ALIGN_RIGHT);
-    m_imgManaRight.setScaleX(1080 / m_imgManaRight.getHeight());
-    m_imgManaRight.setScaleY(1080 / m_imgManaRight.getHeight());
-
     static const char* KreigerImages[] = {
-      [IMG_NOTSELECTED] = RES_ROOT "/Image/kreiger1.png",
-      [IMG_SELECTED] = RES_ROOT "/Image/kreiger2.png",
-      [IMG_CASTED] = RES_ROOT "/Image/kreiger3.png",
-      [IMG_HALF_NOTSELECTED] = RES_ROOT "/Image/kreiger4.png",
-      [IMG_HALF_SELECTED] = RES_ROOT "/Image/kreiger5.png",
-      [IMG_HALF_CASTED] = RES_ROOT "/Image/kreiger6.png",
-      [IMG_NOTSELECTABLE] = RES_ROOT "/Image/kreiger7.png",
+      [IMG_NOTSELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/Kreiger.png",
+      [IMG_SELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/KreigerSelected.png",
+      [IMG_CASTED] = RES_ROOT //
+      "/Image/Encounter/Spell/KreigerCasted.png",
+      [IMG_HALF_NOTSELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/KreigerHalf.png",
+      [IMG_HALF_SELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/KreigerHalfSelected.png",
+      [IMG_HALF_CASTED] = RES_ROOT //
+      "/Image/KreigerHalfCasted.png",
+      [IMG_NOTSELECTABLE] = RES_ROOT //
+      "/Image/KreigerDisabled.png",
     };
 
     InitSpell(Spell::Warrior, KreigerImages, 0, 0);
 
     static const char* KoniImages[] = {
-      [IMG_NOTSELECTED] = RES_ROOT "/Image/koni1.png",
-      [IMG_SELECTED] = RES_ROOT "/Image/koni2.png",
-      [IMG_CASTED] = RES_ROOT "/Image/koni3.png",
-      [IMG_HALF_NOTSELECTED] = RES_ROOT "/Image/koni4.png",
-      [IMG_HALF_SELECTED] = RES_ROOT "/Image/koni5.png",
-      [IMG_HALF_CASTED] = RES_ROOT "/Image/koni6.png",
-      [IMG_NOTSELECTABLE] = RES_ROOT "/Image/koni7.png",
+      [IMG_NOTSELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/Koni.png",
+      [IMG_SELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/KoniSelected.png",
+      [IMG_CASTED] = RES_ROOT //
+      "/Image/Encounter/Spell/KoniCasted.png",
+      [IMG_HALF_NOTSELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/KoniHalf.png",
+      [IMG_HALF_SELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/KoniHalfSelected.png",
+      [IMG_HALF_CASTED] = RES_ROOT //
+      "/Image/Encounter/Spell/KoniHalfCasted.png",
+      [IMG_NOTSELECTABLE] = RES_ROOT //
+      "/Image/Encounter/Spell/KoniDisabled.png",
     };
 
     InitSpell(Spell::Majestic, KoniImages, -500, 0);
 
     static const char* WaldImages[] = {
-      [IMG_NOTSELECTED] = RES_ROOT "/Image/wald1.png",
-      [IMG_SELECTED] = RES_ROOT "/Image/wald2.png",
-      [IMG_CASTED] = RES_ROOT "/Image/wald3.png",
-      [IMG_HALF_NOTSELECTED] = RES_ROOT "/Image/wald4.png",
-      [IMG_HALF_SELECTED] = RES_ROOT "/Image/wald5.png",
-      [IMG_HALF_CASTED] = RES_ROOT "/Image/wald6.png",
-      [IMG_NOTSELECTABLE] = RES_ROOT "/Image/wald7.png",
+      [IMG_NOTSELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/Wald.png",
+      [IMG_SELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/WaldSelected.png",
+      [IMG_CASTED] = RES_ROOT //
+      "/Image/Encounter/Spell/WaldCasted.png",
+      [IMG_HALF_NOTSELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/WaldHalf.png",
+      [IMG_HALF_SELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/WaldHalfSelected.png",
+      [IMG_HALF_CASTED] = RES_ROOT //
+      "/Image/Encounter/Spell/WaldHalfCasted.png",
+      [IMG_NOTSELECTABLE] = RES_ROOT //
+      "/Image/Encounter/Spell/WaldDisabled.png",
     };
 
     InitSpell(Spell::Woodsy, WaldImages, 250, -350);
 
     static const char* WitzImages[] = {
-      [IMG_NOTSELECTED] = RES_ROOT "/Image/witz1.png",
-      [IMG_SELECTED] = RES_ROOT "/Image/witz2.png",
-      [IMG_CASTED] = RES_ROOT "/Image/witz3.png",
-      [IMG_HALF_NOTSELECTED] = RES_ROOT "/Image/witz4.png",
-      [IMG_HALF_SELECTED] = RES_ROOT "/Image/witz5.png",
-      [IMG_HALF_CASTED] = RES_ROOT "/Image/witz6.png",
-      [IMG_NOTSELECTABLE] = RES_ROOT "/Image/witz7.png",
+      [IMG_NOTSELECTED] = RES_ROOT //
+      //
+      "/Image/Encounter/Spell/Witz.png",
+      [IMG_SELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/WitzSelected.png",
+      [IMG_CASTED] = RES_ROOT //
+      "/Image/Encounter/Spell/WitzCasted.png",
+      [IMG_HALF_NOTSELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/WitzHalf.png",
+      [IMG_HALF_SELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/WitzHalfSelected.png",
+      [IMG_HALF_CASTED] = RES_ROOT //
+      "/Image/Encounter/Spell/WitzHalfCasted.png",
+      [IMG_NOTSELECTABLE] = RES_ROOT //
+      "/Image/Encounter/Spell/WitzDisabled.png",
     };
 
     InitSpell(Spell::Trixter, WitzImages, 500, 0);
 
     static const char* SchattenImages[] = {
-      [IMG_NOTSELECTED] = RES_ROOT "/Image/schatten1.png",
-      [IMG_SELECTED] = RES_ROOT "/Image/schatten2.png",
-      [IMG_CASTED] = RES_ROOT "/Image/schatten3.png",
-      [IMG_HALF_NOTSELECTED] = RES_ROOT "/Image/schatten4.png",
-      [IMG_HALF_SELECTED] = RES_ROOT "/Image/schatten5.png",
-      [IMG_HALF_CASTED] = RES_ROOT "/Image/schatten6.png",
-      [IMG_NOTSELECTABLE] = RES_ROOT "/Image/schatten7.png",
+      [IMG_NOTSELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/Schatten.png",
+      [IMG_SELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/SchattenSelected.png",
+      [IMG_CASTED] = RES_ROOT //
+      "/Image/Encounter/Spell/SchattenCasted.png",
+      [IMG_HALF_NOTSELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/SchattenHalf.png",
+      [IMG_HALF_SELECTED] = RES_ROOT //
+      "/Image/Encounter/Spell/SchattenHalfSelected.png",
+      [IMG_HALF_CASTED] = RES_ROOT //
+      "/Image/Encounter/Spell/SchattenHalfCasted.png",
+      [IMG_NOTSELECTABLE] = RES_ROOT //
+      "/Image/Encounter/Spell/SchattenDisabled.png",
     };
 
     InitSpell(Spell::Shadow, SchattenImages, -250, 350);
@@ -150,13 +173,16 @@ void Page_DuelXavier::process()
         m_initialized = true;
     }
 
-    auto page = System::GetPageStatic<Page_Movie>();
-    assert(page != nullptr);
-
-    m_imgManaLeft.setImageData(page->GetManaImage(0, GetMana(0)));
-    m_imgManaRight.setImageData(page->GetManaImage(1, GetMana(1)));
+    m_imgManaLeft.Update(Ctrl_Mana::Left, GetMana(Ctrl_Mana::Left));
+    m_imgManaRight.Update(Ctrl_Mana::Right, GetMana(Ctrl_Mana::Right));
 
     GuiFrame::process();
+}
+
+void Page_DuelXavier::Transition()
+{
+    System::GetPageStatic<Page_Background>()->SetImage(
+      Page_Background::ImageType::TouchDuelGolem);
 }
 
 const char* Page_DuelXavier::NextPhase(Spell castSpell)
@@ -166,8 +192,8 @@ const char* Page_DuelXavier::NextPhase(Spell castSpell)
     case Phase::MagiLose:
         m_nextPhase = Phase::Idle;
 
-        SetMana(0, 0);
-        SetMana(1, 0);
+        SetMana(Ctrl_Mana::Left, 0);
+        SetMana(Ctrl_Mana::Right, 0);
         // Fall through
 
     case Phase::Idle:
@@ -177,15 +203,15 @@ const char* Page_DuelXavier::NextPhase(Spell castSpell)
     case Phase::Start:
         m_nextPhase = Phase::Intro;
         m_isInputPhase = false;
-        SetMana(0, 0);
-        SetMana(1, 0);
+        SetMana(Ctrl_Mana::Left, 0);
+        SetMana(Ctrl_Mana::Right, 0);
         return "XavierDuelIntro";
 
     case Phase::Restart:
         m_nextPhase = Phase::Intro;
         m_isInputPhase = false;
-        SetMana(0, 0);
-        SetMana(1, 0);
+        SetMana(Ctrl_Mana::Left, 0);
+        SetMana(Ctrl_Mana::Right, 0);
         return "XavierDuelIntroRepeatTry";
 
     case Phase::Intro:
@@ -200,8 +226,8 @@ const char* Page_DuelXavier::NextPhase(Spell castSpell)
             m_doneAttackPhase[i] = false;
         }
 
-        SetMana(0, 16);
-        SetMana(1, 16);
+        SetMana(Ctrl_Mana::Left, 16);
+        SetMana(Ctrl_Mana::Right, 16);
         // Fall through
 
     case Phase::MagiAttack:
@@ -269,7 +295,7 @@ const char* Page_DuelXavier::NextPhase(Spell castSpell)
         switch (m_attackPhase) {
         case AttackPhase::Majestic:
             if (castSpell != Spell::Trixter) {
-                SetMana(0, 0);
+                SetMana(Ctrl_Mana::Left, 0);
                 return "XavierDuelMajesticAttackMagiLose";
             }
 
@@ -277,7 +303,7 @@ const char* Page_DuelXavier::NextPhase(Spell castSpell)
 
         case AttackPhase::Shadow:
             if (castSpell != Spell::Shadow) {
-                SetMana(0, 0);
+                SetMana(Ctrl_Mana::Left, 0);
                 return "XavierDuelShadowAttackMagiLose";
             }
 
@@ -285,7 +311,7 @@ const char* Page_DuelXavier::NextPhase(Spell castSpell)
 
         case AttackPhase::Trixter:
             if (castSpell != Spell::Majestic) {
-                SetMana(0, 0);
+                SetMana(Ctrl_Mana::Left, 0);
                 return "XavierDuelTrixterAttackMagiLose";
             }
 
@@ -293,7 +319,7 @@ const char* Page_DuelXavier::NextPhase(Spell castSpell)
 
         case AttackPhase::Warrior:
             if (castSpell != Spell::Warrior) {
-                SetMana(0, 0);
+                SetMana(Ctrl_Mana::Left, 0);
                 return "XavierDuelWarriorAttackMagiLose";
             }
 
@@ -304,7 +330,7 @@ const char* Page_DuelXavier::NextPhase(Spell castSpell)
 
         case AttackPhase::Woodsy:
             if (castSpell != Spell::Woodsy) {
-                SetMana(0, 0);
+                SetMana(Ctrl_Mana::Left, 0);
                 return "XavierDuelWoodsyAttackMagiLose";
             }
 
@@ -345,7 +371,7 @@ const char* Page_DuelXavier::NextPhase(Spell castSpell)
         default:
             m_nextPhase = Phase::MagiLose;
             m_isInputPhase = false;
-            SetMana(0, 0);
+            SetMana(Ctrl_Mana::Left, 0);
             return "XavierDuelXavierInstantKill";
         }
 
@@ -358,14 +384,14 @@ const char* Page_DuelXavier::NextPhase(Spell castSpell)
 
         m_nextPhase = Phase::MagiAttack;
         m_isInputPhase = false;
-        SetMana(1, GetMana(1) - 4);
+        SetMana(Ctrl_Mana::Right, GetMana(1) - 4);
         return "XavierDuelMagiKreiger";
 
     case Phase::XavierNoMana:
         if (castSpell != Spell::Warrior) {
             m_nextPhase = Phase::MagiLose;
             m_isInputPhase = true;
-            SetMana(0, 0);
+            SetMana(Ctrl_Mana::Left, 0);
             return "XavierDuelMagiLose";
         }
 

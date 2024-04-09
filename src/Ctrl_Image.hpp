@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ResourceManager.hpp"
 #include "System.hpp"
 #include <gui/GuiImage.h>
 #include <gui/GuiImageData.h>
@@ -14,13 +15,10 @@ public:
 
     void Load(const char* path)
     {
-        Lock l(sys()->FileMutex());
-
-        m_data.loadImageFromFile(
-          path, GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
+        ResourceManager::GetImage(&m_data, path);
         setImageData(&m_data);
     }
 
 private:
-    GuiImageData m_data;
+    GuiImageData m_data = {};
 };

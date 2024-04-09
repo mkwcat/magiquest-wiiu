@@ -8,6 +8,7 @@
 #include "yuv2rgb.h"
 #include <algorithm>
 #include <cassert>
+#include <unistd.h>
 
 /**
  * Blank image for GuiImageData
@@ -16,7 +17,7 @@ static const u8 blankImg[] = {0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x20, 0x28, 0xFF, 0xFF, 0xFF,
   0x00};
 
-Ctrl_Movie::Ctrl_Movie()
+Ctrl_Movie::Ctrl_Movie(bool audio, u32 maxWidth, u32 maxHeight)
   : GuiImageData(blankImg, sizeof(blankImg), GX2_TEX_CLAMP_MODE_CLAMP,
     GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8)
   , m_voiceL{
@@ -27,7 +28,7 @@ Ctrl_Movie::Ctrl_Movie()
     {32000, 4},
     {32000, 4},
   }
-  , m_decoder(this, 100, 40, MaxWidth, MaxHeight)
+  , m_decoder(this, 100, 40, maxWidth, maxHeight)
 {
     OSInitMessageQueueEx(
       &m_fbInQueue, m_fbInMsg, FBQueueCount, "Ctrl_Movie::m_fbInQueue");
@@ -41,15 +42,19 @@ Ctrl_Movie::Ctrl_Movie()
     OSInitMessageQueueEx(&m_audioNotifyQueue, m_audioNotifyMsg, 4,
       "Ctrl_Movie::m_audioNotifyQueue");
 
+    m_audio = audio;
+    m_maxWidth = maxWidth;
+    m_maxHeight = maxHeight;
+
     // Initialize a texture to get the framebuffer size
     GX2Texture tempTex;
-    GX2InitTexture(&tempTex, MaxWidth, MaxHeight, 1, 1,
+    GX2InitTexture(&tempTex, m_maxWidth, m_maxHeight, 1, 1,
       GX2_SURFACE_FORMAT_UNORM_NV12, GX2_SURFACE_DIM_TEXTURE_2D,
       GX2_TILE_MODE_LINEAR_ALIGNED);
     assert(tempTex.surface.imageSize != 0);
     u32 nv12Size = tempTex.surface.imageSize;
 
-    GX2InitTexture(&tempTex, MaxWidth, MaxHeight, 1, 1,
+    GX2InitTexture(&tempTex, m_maxWidth, m_maxHeight, 1, 1,
       GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8, GX2_SURFACE_DIM_TEXTURE_2D,
       GX2_TILE_MODE_LINEAR_ALIGNED);
     assert(tempTex.surface.imageSize != 0);
@@ -85,13 +90,10 @@ Ctrl_Movie::Ctrl_Movie()
 
     m_videoThread.Run([&]() { VideoDecodeProc(); });
     m_videoNV12Thread.Run([&]() { VideoYUV2RGBProc(); });
-    m_audioThread.Run([&]() { AudioDecodeProc(); });
-}
 
-Ctrl_Movie::Ctrl_Movie(const char* path)
-  : Ctrl_Movie()
-{
-    ChangeMovie(path);
+    if (m_audio) {
+        m_audioThread.Run([&]() { AudioDecodeProc(); });
+    }
 }
 
 Ctrl_Movie::~Ctrl_Movie()
@@ -116,23 +118,27 @@ Ctrl_Movie::~Ctrl_Movie()
     // An empty framebuffer in queue can block the video thread
     OSSendMessage(&m_fbInQueue, &msg, OS_MESSAGE_FLAGS_NONE);
 
-    msg = {
-      .message = nullptr,
-      .args =
-        {
-          [0] = u32(AudioCtrlCmd::Shutdown),
-        },
-    };
+    if (m_audio) {
+        msg = {
+          .message = nullptr,
+          .args =
+            {
+              [0] = u32(AudioCtrlCmd::Shutdown),
+            },
+        };
 
-    ret = OSSendMessage(&m_audioCtrlQueue, &msg,
-      OSMessageFlags(
-        OS_MESSAGE_FLAGS_BLOCKING | OS_MESSAGE_FLAGS_HIGH_PRIORITY));
-    assert(ret);
+        ret = OSSendMessage(&m_audioCtrlQueue, &msg,
+          OSMessageFlags(
+            OS_MESSAGE_FLAGS_BLOCKING | OS_MESSAGE_FLAGS_HIGH_PRIORITY));
+        assert(ret);
 
-    m_voiceL[0].Wakeup();
-    m_voiceL[1].Wakeup();
-    m_voiceR[0].Wakeup();
-    m_voiceR[1].Wakeup();
+        m_voiceL[0].Wakeup();
+        m_voiceL[1].Wakeup();
+        m_voiceR[0].Wakeup();
+        m_voiceR[1].Wakeup();
+
+        m_audioThread.shutdownThread();
+    }
 
     msg = {
       .message = nullptr,
@@ -146,7 +152,6 @@ Ctrl_Movie::~Ctrl_Movie()
 
     m_videoThread.shutdownThread();
     m_videoNV12Thread.shutdownThread();
-    m_audioThread.shutdownThread();
 
     // Restore the original data so GuiImageData can free it
     auto tex = const_cast<GX2Texture*>(getTexture());
@@ -174,22 +179,22 @@ void Ctrl_Movie::process()
     u32 height = msg.args[1] & 0xFFFF;
     u32 frameId = msg.args[2];
 
-    if (frameId == 0) {
-        // Next audio
-        if (!OSReceiveMessage(
-              &m_audioNotifyQueue, &msg, OS_MESSAGE_FLAGS_NONE)) {
-            return;
+    if (m_audio) {
+        if (frameId == 0) {
+            // Next audio
+            if (!OSReceiveMessage(
+                  &m_audioNotifyQueue, &msg, OS_MESSAGE_FLAGS_NONE)) {
+                return;
+            }
+
+            // Stop the old voices
+            m_voiceL[m_curVoice ^ 1].Stop();
+            m_voiceR[m_curVoice ^ 1].Stop();
+
+            // Start the new voices
+            m_voiceL[m_curVoice].Start();
+            m_voiceR[m_curVoice].Start();
         }
-    }
-
-    if (frameId == 2) {
-        // Stop the old voices
-        m_voiceL[m_curVoice ^ 1].Stop();
-        m_voiceR[m_curVoice ^ 1].Stop();
-
-        // Start the new voices
-        m_voiceL[m_curVoice].Start();
-        m_voiceR[m_curVoice].Start();
     }
 
     // Remove it from the queue
@@ -413,41 +418,43 @@ bool Ctrl_Movie::ChangeMovie(const char* path)
 {
     Lock l(sys()->FileMutex());
 
-    char sndPath[256];
-    snprintf(sndPath, 256, "%s.ogg", path);
-
     auto movieFile = fopen(path, "rb");
     if (movieFile == nullptr) {
         LOG(LogMP4, "Failed to open \"%s\"", path);
         return false;
     }
 
-    auto audioFile = fopen(sndPath, "rb");
-    if (audioFile == nullptr) {
-        LOG(LogMP4, "Failed to open \"%s\"", sndPath);
-        fclose(movieFile);
-        return false;
+    if (m_audio) {
+        char sndPath[256];
+        snprintf(sndPath, 256, "%s.ogg", path);
+
+        auto audioFile = fopen(sndPath, "rb");
+        if (audioFile == nullptr) {
+            LOG(LogMP4, "Failed to open \"%s\"", sndPath);
+            fclose(movieFile);
+            return false;
+        }
+
+        OSMessage msg = {
+          .message = nullptr,
+          .args =
+            {
+              [0] = u32(AudioCtrlCmd::ChangeAudio),
+              [1] = u32(audioFile),
+            },
+        };
+
+        auto ret =
+          OSSendMessage(&m_audioCtrlQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
+        assert(ret);
+
+        m_voiceL[0].Wakeup();
+        m_voiceL[1].Wakeup();
+        m_voiceR[0].Wakeup();
+        m_voiceR[1].Wakeup();
     }
 
     OSMessage msg = {
-      .message = nullptr,
-      .args =
-        {
-          [0] = u32(AudioCtrlCmd::ChangeAudio),
-          [1] = u32(audioFile),
-        },
-    };
-
-    auto ret =
-      OSSendMessage(&m_audioCtrlQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
-    assert(ret);
-
-    m_voiceL[0].Wakeup();
-    m_voiceL[1].Wakeup();
-    m_voiceR[0].Wakeup();
-    m_voiceR[1].Wakeup();
-
-    msg = {
       .message = nullptr,
       .args =
         {
@@ -456,7 +463,7 @@ bool Ctrl_Movie::ChangeMovie(const char* path)
         },
     };
 
-    ret = OSSendMessage(&m_ctrlQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
+    auto ret = OSSendMessage(&m_ctrlQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
     assert(ret);
 
     return true;
@@ -517,9 +524,6 @@ Ctrl_Movie::Decoder::Decoder(
 
 Ctrl_Movie::Decoder::~Decoder()
 {
-    if (m_file != nullptr) {
-        // CloseMovie();
-    }
 }
 
 const ov_callbacks Ctrl_Movie::Decoder::s_oggCallbacks = {
@@ -598,8 +602,9 @@ vorbis_info* Ctrl_Movie::Decoder::OpenAudio(FILE* audioFile)
 
 void Ctrl_Movie::Decoder::CloseMovie()
 {
-    if (m_file == nullptr)
+    if (m_file == nullptr) {
         return;
+    }
 
     LOG(LogMP4, "Closing file");
     auto f2 = m_file;
@@ -620,11 +625,13 @@ void Ctrl_Movie::Decoder::CloseMovie()
 
 bool Ctrl_Movie::Decoder::Read(u8* out, u32 offset, u32 len)
 {
-    if (m_file == nullptr)
+    if (m_file == nullptr) {
         return false;
+    }
 
-    if (offset + len > m_fileSize || offset + len < offset)
+    if (offset + len > m_fileSize || offset + len < offset) {
         return false;
+    }
 
     u32 offsetRounded = RoundDown(offset, MaxCacheSize);
     u32 offsetInBlock = offset - offsetRounded;
@@ -649,8 +656,9 @@ bool Ctrl_Movie::Decoder::Read(u8* out, u32 offset, u32 len)
 
     if (offsetRounded == m_cacheOffset) {
         // Read from cached block
-        if (!copyFromCached())
+        if (!copyFromCached()) {
             return false;
+        }
     }
 
     Lock l(sys()->FileMutex());
@@ -658,8 +666,9 @@ bool Ctrl_Movie::Decoder::Read(u8* out, u32 offset, u32 len)
     // Read the rest of the data
     while (len > 0) {
         if (m_seekOffset != offsetRounded) {
-            if (fseek(m_file, offsetRounded, SEEK_SET) != 0)
+            if (fseek(m_file, offsetRounded, SEEK_SET) != 0) {
                 return false;
+            }
             m_seekOffset = offsetRounded;
             m_cacheOffset = offsetRounded;
         }
@@ -673,8 +682,9 @@ bool Ctrl_Movie::Decoder::Read(u8* out, u32 offset, u32 len)
         m_cacheSize = ret;
         m_seekOffset += m_cacheSize;
 
-        if (!copyFromCached())
+        if (!copyFromCached()) {
             return false;
+        }
     }
 
     return true;
@@ -715,8 +725,9 @@ void Ctrl_Movie::Decoder::H264FrameCallback(H264DecodeOutput* output)
 bool Ctrl_Movie::Decoder::DecodeFrame(
   u8* nv12Fb, u8* rgbaFb, OSMessageQueue* respQueue)
 {
-    if (m_tr == nullptr || m_file == nullptr)
+    if (m_tr == nullptr || m_file == nullptr) {
         return false;
+    }
 
     const void* sps = nullptr;
     s32 spsSize = 0;
@@ -742,14 +753,16 @@ bool Ctrl_Movie::Decoder::DecodeFrame(
     int validCount = 0;
 
     do {
-        if (m_sample >= m_tr->sample_count)
+        if (m_sample >= m_tr->sample_count) {
             return false;
+        }
 
         auto offset = MP4D_frame_offset(
           &m_mp4, 0, m_sample, &byteCount, &timestamp, &duration);
 
-        if (offset == 0 || byteCount == 0)
+        if (offset == 0 || byteCount == 0) {
             return false;
+        }
 
         sampleData = std::make_unique<u8[]>(byteCount + spsSize + ppsSize + 8);
         if (!Read(

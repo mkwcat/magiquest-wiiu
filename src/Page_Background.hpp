@@ -11,22 +11,51 @@
 
 class Page_Background : public GuiFrame
 {
+private:
+    void LoadImage(Ctrl_Image& image, const char* path)
+    {
+        image.Load(path);
+        image.setScaleX(1920 / image.getWidth());
+        image.setScaleY(1080 / image.getHeight());
+        append(&image);
+    }
+
 public:
     void process()
     {
-        if (!m_initialized) {
-            m_bgImg.Load(RES_ROOT "/Image/sgStone-Tasks.jpg");
-            m_bgImg.setScaleX(1920 / m_bgImg.getWidth());
-            m_bgImg.setScaleY(1080 / m_bgImg.getHeight());
-
-            append(&m_bgImg);
-
-            m_initialized = true;
+        if (m_initialized) {
+            return;
         }
+
+        LoadImage(
+          m_statusStationImage, RES_ROOT "/Image/Background/GameStation.jpg");
+        LoadImage(
+          m_touchDuelXavierImage, RES_ROOT "/Image/Background/TouchduelXavier.jpg");
+        LoadImage(m_touchDuelGolemImage,
+          RES_ROOT "/Image/Background/TouchduelXavier.jpg");
+
+        SetImage(ImageType::StatusStation);
+
+        m_initialized = true;
+    }
+
+    enum class ImageType {
+        StatusStation,
+        TouchDuelXavier,
+        TouchDuelGolem,
+    };
+
+    void SetImage(ImageType type)
+    {
+        m_statusStationImage.setVisible(type == ImageType::StatusStation);
+        m_touchDuelXavierImage.setVisible(type == ImageType::TouchDuelXavier);
+        m_touchDuelGolemImage.setVisible(type == ImageType::TouchDuelGolem);
     }
 
 private:
     bool m_initialized = false;
 
-    Ctrl_Image m_bgImg;
+    Ctrl_Image m_statusStationImage;
+    Ctrl_Image m_touchDuelXavierImage;
+    Ctrl_Image m_touchDuelGolemImage;
 };

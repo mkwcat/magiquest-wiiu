@@ -29,6 +29,13 @@ public:
     {
     }
 
+    /**
+     * Called when the UI transitions to this page.
+     */
+    virtual void Transition()
+    {
+    }
+
 private:
     u8 m_manaLeft = 0;
     u8 m_manaRight = 0;

@@ -10,56 +10,41 @@
 #include <cstdio>
 
 Page_Movie::Page_Movie()
-  : m_movieImg(nullptr)
+  : m_movie(true)
+  , m_movieImg(nullptr)
 {
     OSInitMutexEx(&m_mutex, "Page_Movie::m_mutex");
 
     m_movie.SetOnEndHandler([&](Ctrl_Movie* movie) {
         Lock lock(m_mutex);
-        if (m_encounter == nullptr)
+        if (m_encounter == nullptr) {
             return;
+        }
 
         auto nextMovie = m_encounter->NextMovie();
-        if (nextMovie == nullptr)
+        if (nextMovie == nullptr) {
             return;
+        }
 
         m_movie.ChangeMovie(nextMovie);
     });
 
     m_movie.SetOnFrameHandler([&](Ctrl_Movie* movie, u32 frame) {
         Lock lock(m_mutex);
-        if (m_encounter == nullptr)
+        if (m_encounter == nullptr) {
             return;
+        }
 
         m_encounter->NextFrame(frame);
     });
 
     append(&m_movieImg);
 
-    for (u32 i = 0; i < 17; i++) {
-        Lock l(sys()->FileMutex());
-
-        char path[64];
-        snprintf(path, 64, RES_ROOT "/Image/mana_l%u.png", i);
-
-        m_manaImg[i].loadImageFromFile(
-          path, GX2_TEX_CLAMP_MODE_CLAMP, GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8);
-    }
-
     m_movie.ChangeMovie(RES_ROOT "/Movie/Xavier/XavierIdle.mp4");
 }
 
 Page_Movie::~Page_Movie()
 {
-}
-
-GuiImageData* Page_Movie::GetManaImage(u8 value)
-{
-    if (value > 16) {
-        return nullptr;
-    }
-
-    return &m_manaImg[value];
 }
 
 void Page_Movie::EndMovie()
@@ -76,11 +61,13 @@ void Page_Movie::SetEncounter(Encounter* encounter)
 
 void Page_Movie::ManaUpdate(u8 side, u8 value)
 {
-    if (value == 0)
+    if (value == 0) {
         m_manaSound = ManaSound::ManaReset;
+    }
 
-    if (m_manaSound == ManaSound::ManaReset)
+    if (m_manaSound == ManaSound::ManaReset) {
         return;
+    }
 
     m_manaSound = ManaSound::ManaDown;
 }
@@ -102,18 +89,18 @@ void Page_Movie::process()
           0x30000000, true, true, true, true, 48000, true, false);
         assert(voiceDown != -1);
 
-        u32 dataLen;
-        void* data = System::s_instance->RipFile(
-          RES_ROOT "/Sound/mana_powerup.pcm16", &dataLen);
-        assert(data != nullptr);
+        // u32 dataLen;
+        // void* data = System::s_instance->RipFile(
+        //   RES_ROOT "/Sound/ManaReset.pcm16", &dataLen);
+        // assert(data != nullptr);
 
-        ax->PushBuffer(voiceReset, (u16*) data, dataLen / 2, false);
+        // ax->PushBuffer(voiceReset, (u16*) data, dataLen / 2, false);
 
-        data = System::s_instance->RipFile(
-          RES_ROOT "/Sound/manadown.pcm16", &dataLen);
-        assert(data != nullptr);
+        // data = System::s_instance->RipFile(
+        //   RES_ROOT "/Sound/ManaDown.pcm16", &dataLen);
+        // assert(data != nullptr);
 
-        ax->PushBuffer(voiceDown, (u16*) data, dataLen / 2, false);
+        // ax->PushBuffer(voiceDown, (u16*) data, dataLen / 2, false);
     }
 
     m_movie.process();

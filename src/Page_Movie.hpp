@@ -18,11 +18,6 @@ public:
     ~Page_Movie();
 
     /**
-     * Gets the GuiImageData for the specified mana value.
-     */
-    GuiImageData* GetManaImage(u8 value);
-
-    /**
      * Force ends the movie.
      */
     void EndMovie();
@@ -50,8 +45,6 @@ protected:
 
     OSMutex m_mutex;
 
-    GuiImageData m_manaImg[17];
-
     enum class ManaSound {
         None,
         ManaDown,
@@ -59,5 +52,5 @@ protected:
     };
     ManaSound m_manaSound;
 
-    Encounter* m_encounter;
+    Encounter* m_encounter = nullptr;
 };

@@ -22,12 +22,8 @@
 class Ctrl_Movie : public GuiImageData
 {
 public:
-    Ctrl_Movie();
-    Ctrl_Movie(const char* path);
+    Ctrl_Movie(bool audio, u32 maxWidth = 768, u32 maxHeight = 768);
     ~Ctrl_Movie();
-
-    static constexpr u32 MaxWidth = 768;
-    static constexpr u32 MaxHeight = 768;
 
     /**
      * GuiElement process.
@@ -115,10 +111,14 @@ private:
     DecoderThread m_videoNV12Thread{10};
     DecoderThread m_audioThread{1};
 
-    std::unique_ptr<u8> m_rgbFrame;
-    u32 m_rgbFrameSize;
+    bool m_audio = false;
+    u32 m_maxWidth = 0;
+    u32 m_maxHeight = 0;
 
-    void* m_savedImageData;
+    std::unique_ptr<u8> m_rgbFrame;
+    u32 m_rgbFrameSize = 0;
+
+    void* m_savedImageData = nullptr;
 
     static constexpr u32 FrameBufferCount = 4;
     static constexpr u32 FBQueueCount = 8;
@@ -126,12 +126,12 @@ private:
     std::unique_ptr<u8> m_fbData;
     std::unique_ptr<u8> m_fbNv12Data;
 
-    OSMessage m_fbInMsg[FBQueueCount];
-    OSMessageQueue m_fbInQueue;
-    OSMessage m_fbNv12Msg[FBQueueCount];
-    OSMessageQueue m_fbNv12Queue;
-    OSMessage m_fbOutMsg[FBQueueCount];
-    OSMessageQueue m_fbOutQueue;
+    OSMessage m_fbInMsg[FBQueueCount] = {};
+    OSMessageQueue m_fbInQueue = {};
+    OSMessage m_fbNv12Msg[FBQueueCount] = {};
+    OSMessageQueue m_fbNv12Queue = {};
+    OSMessage m_fbOutMsg[FBQueueCount] = {};
+    OSMessageQueue m_fbOutQueue = {};
 
     enum class CtrlCmd {
         ChangeMovie,
@@ -143,10 +143,10 @@ private:
         Shutdown,
     };
 
-    OSMessage m_ctrlMsg[8];
-    OSMessageQueue m_ctrlQueue;
-    OSMessage m_audioCtrlMsg[8];
-    OSMessageQueue m_audioCtrlQueue;
+    OSMessage m_ctrlMsg[8] = {};
+    OSMessageQueue m_ctrlQueue = {};
+    OSMessage m_audioCtrlMsg[8] = {};
+    OSMessageQueue m_audioCtrlQueue = {};
 
     /**
      * Left audio voice.
@@ -160,8 +160,8 @@ private:
 
     int m_curVoice = 0;
 
-    OSMessage m_audioNotifyMsg[4];
-    OSMessageQueue m_audioNotifyQueue;
+    OSMessage m_audioNotifyMsg[4] = {};
+    OSMessageQueue m_audioNotifyQueue = {};
 
     class Decoder
     {
@@ -252,40 +252,40 @@ private:
         /**
          * The MP4 file to read from, assumed valid if not nullptr.
          */
-        FILE* m_file;
-        u32 m_fileSize;
+        FILE* m_file = nullptr;
+        u32 m_fileSize = 0;
 
-        MP4D_demux_t m_mp4;
-        MP4D_track_t* m_tr;
-        u32 m_sample;
-        u32 m_frameNum;
+        MP4D_demux_t m_mp4 = {};
+        MP4D_track_t* m_tr = nullptr;
+        u32 m_sample = 0;
+        u32 m_frameNum = 0;
         std::unique_ptr<u8[]> m_sampleData;
 
         static constexpr int MaxCacheSize = 4096 * 2;
 
-        u32 m_cacheOffset;
-        u32 m_cacheSize;
-        u8 m_cache[MaxCacheSize];
-        u32 m_seekOffset;
+        u32 m_cacheOffset = 0;
+        u32 m_cacheSize = 0;
+        u8 m_cache[MaxCacheSize] alignas(32) = {};
+        u32 m_seekOffset = 0;
 
         std::unique_ptr<u8[]> m_memory;
 
         /**
          * Data for the H264 decoding callback.
          */
-        OSMutex m_h264Mutex;
-        void* m_inputNV12Data;
-        void* m_inputRGBAData;
-        OSMessageQueue* m_inputRespQueue;
+        OSMutex m_h264Mutex = {};
+        void* m_inputNV12Data = nullptr;
+        void* m_inputRGBAData = nullptr;
+        OSMessageQueue* m_inputRespQueue = nullptr;
 
-        OggVorbis_File m_oggFile;
-        FILE* m_audioFile;
+        OggVorbis_File m_oggFile = {};
+        FILE* m_audioFile = nullptr;
 
         std::unique_ptr<u16> m_audioBuffer;
-        u32 m_audioBufferSize;
+        u32 m_audioBufferSize = 0;
     };
 
     Decoder m_decoder;
 
-    bool m_streamEnded;
+    bool m_streamEnded = false;
 };

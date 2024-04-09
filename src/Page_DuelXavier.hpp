@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "Ctrl_Mana.hpp"
 #include "Ctrl_Spell.hpp"
 #include "Encounter.hpp"
 #include "System.hpp"
@@ -50,10 +51,6 @@ class Page_DuelXavier : public GuiFrame, public Encounter
     };
     static constexpr u32 AttackPhaseCount = u32(AttackPhase::Default);
 
-public:
-    Page_DuelXavier();
-    ~Page_DuelXavier();
-
 protected:
     Ctrl_Spell m_buttons[SpellCount];
     int m_buttonUses[SpellCount];
@@ -69,6 +66,11 @@ public:
      * GuiElement process.
      */
     void process() override;
+
+    /**
+     * Transition from Encounter.
+     */
+    void Transition() override;
 
 protected:
     const char* NextPhase(Spell castSpell);
@@ -96,16 +98,16 @@ protected:
      */
     void DeselectAll();
 
-    bool m_initialized;
+    bool m_initialized = false;
 
-    Phase m_currentPhase;
-    Phase m_nextPhase;
+    Phase m_currentPhase = Phase::Idle;
+    Phase m_nextPhase = Phase::Idle;
     AttackPhase m_attackPhase;
     char m_phaseMoviePath[128];
-    bool m_isInputPhase;
+    bool m_isInputPhase = false;
 
-    GuiImage m_imgManaLeft;
-    GuiImage m_imgManaRight;
+    Ctrl_Mana m_imgManaLeft;
+    Ctrl_Mana m_imgManaRight;
 
-    bool m_started;
+    bool m_started = false;
 };

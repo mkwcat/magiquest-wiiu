@@ -18,14 +18,14 @@ Page_ModeSelect::Page_ModeSelect()
 
 void Page_ModeSelect::Init()
 {
-    m_title.Load(RES_ROOT "/Image/mqTitleSelectCastMode.png");
+    m_title.Load(RES_ROOT "/Image/Menu/Title/ModeSelect.png");
     m_title.setPosition(0, 370);
     m_title.setScaleX(1.8);
     m_title.setScaleY(1.8);
 
     append(&m_title);
 
-    m_bannerTouchDuel.Load(RES_ROOT "/Image/mqBannerTouchDuel.png");
+    m_bannerTouchDuel.Load(RES_ROOT "/Image/Menu/Button/BannerTouchDuel.png");
     m_bannerTouchDuel.setScaleX(300 / m_bannerTouchDuel.getHeight());
     m_bannerTouchDuel.setScaleY(300 / m_bannerTouchDuel.getHeight());
     m_btnTouchDuel.setImage(&m_bannerTouchDuel);
@@ -36,7 +36,7 @@ void Page_ModeSelect::Init()
 
     append(&m_btnTouchDuel);
 
-    m_bannerCastDuel.Load(RES_ROOT "/Image/mqBannerCastDuel.png");
+    m_bannerCastDuel.Load(RES_ROOT "/Image/Menu/Button/BannerCastDuel.png");
     m_bannerCastDuel.setScaleX(300 / m_bannerCastDuel.getHeight());
     m_bannerCastDuel.setScaleY(300 / m_bannerCastDuel.getHeight());
     m_btnCastDuel.setImage(&m_bannerCastDuel);
@@ -47,7 +47,7 @@ void Page_ModeSelect::Init()
 
     append(&m_btnCastDuel);
 
-    m_bannerRealWand.Load(RES_ROOT "/Image/mqBannerTouchDuelRealWand.png");
+    m_bannerRealWand.Load(RES_ROOT "/Image/Menu/Button/BannerRealWand.png");
     m_bannerRealWand.setScaleX(300 / m_bannerRealWand.getHeight());
     m_bannerRealWand.setScaleY(300 / m_bannerRealWand.getHeight());
     m_btnRealWand.setImage(&m_bannerRealWand);
@@ -78,10 +78,9 @@ void Page_ModeSelect::OnSelectTouchDuel(
       Wand::CastMode::WiiRemoteTouchRune);
 
     System::s_instance->HidePage(System::GetPageID(this), System::Display::All);
-    System::s_instance->HidePage(
-      System::GetPageID<Page_Background>(), System::Display::All);
     System::s_instance->ShowPage(
       System::GetPageID<Encounter>(), System::Display::DRC);
+    System::GetPageStatic<Encounter>()->Transition();
 }
 
 void Page_ModeSelect::OnSelectCastDuel(
@@ -109,4 +108,5 @@ void Page_ModeSelect::OnSelectRealWand(
       System::GetPageID<Page_Background>(), System::Display::All);
     System::s_instance->ShowPage(
       System::GetPageID<Encounter>(), System::Display::DRC);
+    System::GetPageStatic<Encounter>()->Transition();
 }

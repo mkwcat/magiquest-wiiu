@@ -162,6 +162,10 @@ void Wand::Update(float* curX, float* curY, float* curZ, bool* curValid)
         m_rumbleTimer = -1;
     }
 
+    if (data.trigger & WPAD_BUTTON_UP) {
+        m_casted = true;
+    }
+
     if (m_casted) {
         return;
     }

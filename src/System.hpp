@@ -175,20 +175,20 @@ public:
     void executeThread() override;
 
 protected:
-    CVideo* m_video;
+    CVideo* m_video = nullptr;
 
     VPadController m_gamepad;
 
     GuiImageData m_imgCursorData;
     GuiImage m_imgCursor;
-    s32 m_imgCursorTimer;
-    Wand* m_wand;
+    s32 m_imgCursorTimer = 0;
+    Wand* m_wand = nullptr;
 
-    OSMutex m_fileMutex;
+    OSMutex m_fileMutex = {};
 
     PageSetting m_pages[PageCount];
 
-    u32 m_frameId;
+    u32 m_frameId = 0;
 };
 
 static inline System* sys()
