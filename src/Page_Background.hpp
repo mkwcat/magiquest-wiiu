@@ -29,10 +29,10 @@ public:
 
         LoadImage(
           m_statusStationImage, RES_ROOT "/Image/Background/GameStation.jpg");
-        LoadImage(
-          m_touchDuelXavierImage, RES_ROOT "/Image/Background/TouchduelXavier.jpg");
-        LoadImage(m_touchDuelGolemImage,
+        LoadImage(m_touchDuelXavierImage,
           RES_ROOT "/Image/Background/TouchduelXavier.jpg");
+        LoadImage(m_touchDuelBlizzardDawnImage,
+          RES_ROOT "/Image/Background/TouchduelBlizzardDawn.jpg");
 
         SetImage(ImageType::StatusStation);
 
@@ -42,14 +42,15 @@ public:
     enum class ImageType {
         StatusStation,
         TouchDuelXavier,
-        TouchDuelGolem,
+        TouchDuelBlizzardDawn,
     };
 
     void SetImage(ImageType type)
     {
         m_statusStationImage.setVisible(type == ImageType::StatusStation);
         m_touchDuelXavierImage.setVisible(type == ImageType::TouchDuelXavier);
-        m_touchDuelGolemImage.setVisible(type == ImageType::TouchDuelGolem);
+        m_touchDuelBlizzardDawnImage.setVisible(
+          type == ImageType::TouchDuelBlizzardDawn);
     }
 
 private:
@@ -57,5 +58,5 @@ private:
 
     Ctrl_Image m_statusStationImage;
     Ctrl_Image m_touchDuelXavierImage;
-    Ctrl_Image m_touchDuelGolemImage;
+    Ctrl_Image m_touchDuelBlizzardDawnImage;
 };

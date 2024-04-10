@@ -26,8 +26,7 @@ enum {
     IMG_SELECTED = 1,
 };
 
-void Page_DuelGolem::InitSpell(
-  Spell spell, const char** images, int posX, int posY)
+void Page_DuelGolem::InitSpell(Spell spell, const char** images, int posX, int posY)
 {
     u32 btn = u32(spell);
     assert(btn < SpellCount);
@@ -131,7 +130,7 @@ void Page_DuelGolem::process()
 void Page_DuelGolem::Transition()
 {
     System::GetPageStatic<Page_Background>()->SetImage(
-      Page_Background::ImageType::TouchDuelGolem);
+      Page_Background::ImageType::TouchDuelBlizzardDawn);
 }
 
 const char* Page_DuelGolem::NextPhase(Spell castSpell)
@@ -344,8 +343,7 @@ const char* Page_DuelGolem::NextMovie()
         // Default to the Xavier idle screen
         strcpy(m_phaseMoviePath, RES_ROOT "/Movie/Xavier/XavierIdle.mp4");
     } else {
-        snprintf(m_phaseMoviePath, sizeof(m_phaseMoviePath),
-          RES_ROOT "/Movie/Golem/%s.mp4", name);
+        snprintf(m_phaseMoviePath, sizeof(m_phaseMoviePath), RES_ROOT "/Movie/Golem/%s.mp4", name);
     }
 
     // Disable all buttons
@@ -367,8 +365,7 @@ void Page_DuelGolem::Cast(
         return;
     }
 
-    if (castMode == Wand::CastMode::WiiRemoteCastRune && curValid &&
-        m_isInputPhase &&
+    if (castMode == Wand::CastMode::WiiRemoteCastRune && curValid && m_isInputPhase &&
         (curX < 640 && curX > -640 && curY < 450 && curY > -450)) {
         for (u32 i = 0; i < SpellCount; i++) {
             if (!m_buttons[i].IsSelectable())
@@ -376,8 +373,7 @@ void Page_DuelGolem::Cast(
 
             auto x = m_buttons[i].getCenterX();
             auto y = m_buttons[i].getCenterY();
-            if (curX > x - 240 && curX < x + 240 && curY > y - 240 &&
-                curY < y + 240) {
+            if (curX > x - 240 && curX < x + 240 && curY > y - 240 && curY < y + 240) {
                 DeselectAll();
                 m_buttons[i].Select();
             }

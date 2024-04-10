@@ -136,7 +136,7 @@ void System::Start()
 
 void System::executeThread()
 {
-    ShowPage(System::PageID::Movie, System::Display::DRC);
+    ShowPage(System::PageID::Movie, System::Display::TV);
     ShowPage(System::PageID::Background, System::Display::DRC);
     ShowPage(System::PageID::ModeSelect, System::Display::DRC);
 

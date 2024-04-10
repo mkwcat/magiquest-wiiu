@@ -82,13 +82,15 @@ private:
     class DecoderThread : public CThread
     {
     public:
-        DecoderThread()
-          : CThread(CThread::eAttributeNone, 16, 0x10000)
-        {
-        }
-
-        DecoderThread(s32 priority)
-          : CThread(CThread::eAttributeNone, priority, 0x10000)
+        DecoderThread(s32 priority = 16, int core = -1)
+          : CThread(core == 0 ? CThread::eAttributeAffCore0 |
+                                  CThread::eAttributePinnedAff
+                    : core == 1 ? CThread::eAttributeAffCore1 |
+                                    CThread::eAttributePinnedAff
+                    : core == 2 ? CThread::eAttributeAffCore2 |
+                                    CThread::eAttributePinnedAff
+                                : CThread::eAttributeNone,
+              priority, 0x10000)
         {
         }
 
@@ -107,9 +109,9 @@ private:
         std::function<void()> m_entry;
     };
 
-    DecoderThread m_videoThread{20};
-    DecoderThread m_videoNV12Thread{10};
-    DecoderThread m_audioThread{1};
+    DecoderThread m_videoThread{0, 0};
+    DecoderThread m_videoNV12Thread{2, 2};
+    DecoderThread m_audioThread{1, 2};
 
     bool m_audio = false;
     u32 m_maxWidth = 0;

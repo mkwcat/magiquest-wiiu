@@ -81,9 +81,9 @@ void Page_DuelXavier::Init()
       [IMG_HALF_SELECTED] = RES_ROOT //
       "/Image/Encounter/Spell/KreigerHalfSelected.png",
       [IMG_HALF_CASTED] = RES_ROOT //
-      "/Image/KreigerHalfCasted.png",
+      "/Image/Encounter/Spell/KreigerHalfCasted.png",
       [IMG_NOTSELECTABLE] = RES_ROOT //
-      "/Image/KreigerDisabled.png",
+      "/Image/Encounter/Spell/KreigerDisabled.png",
     };
 
     InitSpell(Spell::Warrior, KreigerImages, 0, 0);
@@ -182,7 +182,7 @@ void Page_DuelXavier::process()
 void Page_DuelXavier::Transition()
 {
     System::GetPageStatic<Page_Background>()->SetImage(
-      Page_Background::ImageType::TouchDuelGolem);
+      Page_Background::ImageType::TouchDuelXavier);
 }
 
 const char* Page_DuelXavier::NextPhase(Spell castSpell)
