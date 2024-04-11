@@ -16,8 +16,7 @@
 #include <gui/system/CThread.h>
 #include <h264/decode.h>
 #include <memory>
-#include <tremor/ivorbiscodec.h>
-#include <tremor/ivorbisfile.h>
+#include <opusfile.h>
 
 class Ctrl_Movie : public GuiImageData
 {
@@ -83,12 +82,9 @@ private:
     {
     public:
         DecoderThread(s32 priority = 16, int core = -1)
-          : CThread(core == 0 ? CThread::eAttributeAffCore0 |
-                                  CThread::eAttributePinnedAff
-                    : core == 1 ? CThread::eAttributeAffCore1 |
-                                    CThread::eAttributePinnedAff
-                    : core == 2 ? CThread::eAttributeAffCore2 |
-                                    CThread::eAttributePinnedAff
+          : CThread(core == 0   ? CThread::eAttributeAffCore0 | CThread::eAttributePinnedAff
+                    : core == 1 ? CThread::eAttributeAffCore1 | CThread::eAttributePinnedAff
+                    : core == 2 ? CThread::eAttributeAffCore2 | CThread::eAttributePinnedAff
                                 : CThread::eAttributeNone,
               priority, 0x10000)
         {
@@ -175,8 +171,7 @@ private:
         Ctrl_Movie* m_parent;
 
     public:
-        Decoder(Ctrl_Movie* parent, u32 profile, u32 level, u32 maxWidth,
-          u32 maxHeight);
+        Decoder(Ctrl_Movie* parent, u32 profile, u32 level, u32 maxWidth, u32 maxHeight);
         ~Decoder();
 
         /**
@@ -189,7 +184,7 @@ private:
          * Open the audio file for parsing. Automatically closes any previous
          * context.
          */
-        vorbis_info* OpenAudio(FILE* audioFile);
+        bool OpenAudio(FILE* audioFile);
 
         /**
          * Close the current movie context.
@@ -218,8 +213,7 @@ private:
         /**
          * Read function for minimp4.
          */
-        static int MP4ReadCallback(
-          s64 offset, void* buffer, size_t size, void* token);
+        static int MP4ReadCallback(s64 offset, void* buffer, size_t size, void* token);
 
         /**
          * H264DEC frame output callback.
@@ -229,27 +223,27 @@ private:
         /**
          * OGG read callback.
          */
-        static size_t OGGRead(void* punt, size_t bytes, size_t blocks, void* f);
+        static int OGGRead(void* object, u8* ptr, int count);
 
         /**
          * OGG seek callback.
          */
-        static int OGGSeek(void* f, ogg_int64_t offset, int mode);
+        static int OGGSeek(void* object, opus_int64 offset, int whence);
 
         /**
          * OGG close callback.
          */
-        static int OGGClose(void* f);
+        static int OGGClose(void* object);
 
         /**
          * OGG tell callback.
          */
-        static long OGGTell(void* f);
+        static s64 OGGTell(void* object);
 
         /**
          * OGG callbacks struct.
          */
-        static const ov_callbacks s_oggCallbacks;
+        static const OpusFileCallbacks s_oggCallbacks;
 
         /**
          * The MP4 file to read from, assumed valid if not nullptr.
@@ -280,10 +274,10 @@ private:
         void* m_inputRGBAData = nullptr;
         OSMessageQueue* m_inputRespQueue = nullptr;
 
-        OggVorbis_File m_oggFile = {};
+        OggOpusFile* m_oggFile = nullptr;
         FILE* m_audioFile = nullptr;
 
-        std::unique_ptr<u16> m_audioBuffer;
+        std::unique_ptr<opus_int16> m_audioBuffer;
         u32 m_audioBufferSize = 0;
     };
 

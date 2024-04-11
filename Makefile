@@ -45,12 +45,12 @@ CXXFLAGS	:= $(CFLAGS)
 ASFLAGS	:=	$(ARCH)
 LDFLAGS	=	$(ARCH) $(RPXSPECS) -Wl,-Map,$(notdir $*.map) -Wl,--gc-sections
 
-LIBS	:=  -lgui -lfreetype -lgd -lpng -ljpeg -lz -lmad -lvorbisidec -logg -lbz2 -lwut
+LIBS	:=  -lgui -lfreetype -lgd -lpng -ljpeg -lz -lmad -lopusfile -lopus -logg -lbz2 -lwut
 
 #-------------------------------------------------------------------------------
 # list of directories containing libraries
 #-------------------------------------------------------------------------------
-LIBDIRS	:= $(PORTLIBS) $(WUT_ROOT) $(WUT_ROOT)/usr
+LIBDIRS	:= $(PORTLIBS) $(WUT_ROOT) $(WUT_ROOT)/usr $(CURDIR)/vendor/libopus $(CURDIR)/vendor/opusfile
 INCLUDES	:= $(CURDIR)/src $(PORTLIBS)/include/freetype2
 
 #-------------------------------------------------------------------------------
@@ -98,7 +98,7 @@ export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(dir)) \
 			-I$(CURDIR)/$(BUILD) -I$(LIBOGC_INC) \
 			-I$(CURDIR)/$(BUILD)
 
-export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
+export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)) $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
 
 .PHONY: $(BUILD) clean all
