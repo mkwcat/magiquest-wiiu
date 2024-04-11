@@ -105,9 +105,9 @@ private:
         std::function<void()> m_entry;
     };
 
-    DecoderThread m_videoThread{0, 0};
+    DecoderThread m_videoThread{1, 2};
     DecoderThread m_videoNV12Thread{2, 2};
-    DecoderThread m_audioThread{1, 2};
+    DecoderThread m_audioThread{1, 0};
 
     bool m_audio = false;
     u32 m_maxWidth = 0;

@@ -81,26 +81,22 @@ void Page_Movie::process()
 
         auto ax = AXManager::s_instance;
 
-        voiceReset = ax->AcquireVoice(
-          0x30000000, true, true, true, true, 48000, true, false);
+        voiceReset = ax->AcquireVoice(0x30000000, true, true, true, true, 48000, true, false);
         assert(voiceReset != -1);
 
-        voiceDown = ax->AcquireVoice(
-          0x30000000, true, true, true, true, 48000, true, false);
+        voiceDown = ax->AcquireVoice(0x30000000, true, true, true, true, 48000, true, false);
         assert(voiceDown != -1);
 
-        // u32 dataLen;
-        // void* data = System::s_instance->RipFile(
-        //   RES_ROOT "/Sound/ManaReset.pcm16", &dataLen);
-        // assert(data != nullptr);
+        u32 dataLen;
+        void* data = System::s_instance->RipFile(RES_ROOT "/Sound/ManaReset.pcm16", &dataLen);
+        assert(data != nullptr);
 
-        // ax->PushBuffer(voiceReset, (u16*) data, dataLen / 2, false);
+        ax->PushBuffer(voiceReset, (u16*) data, dataLen / 2, false);
 
-        // data = System::s_instance->RipFile(
-        //   RES_ROOT "/Sound/ManaDown.pcm16", &dataLen);
-        // assert(data != nullptr);
+        data = System::s_instance->RipFile(RES_ROOT "/Sound/ManaDown.pcm16", &dataLen);
+        assert(data != nullptr);
 
-        // ax->PushBuffer(voiceDown, (u16*) data, dataLen / 2, false);
+        ax->PushBuffer(voiceDown, (u16*) data, dataLen / 2, false);
     }
 
     m_movie.process();

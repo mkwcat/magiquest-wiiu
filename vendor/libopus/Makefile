@@ -47,7 +47,7 @@ ldflags-from-ldlibdirs  = $(addprefix -L,$(1))
 ldlibs-from-libs        = $(addprefix -l,$(1))
 
 WARNINGS = -Wall -W -Wstrict-prototypes -Wextra -Wcast-align -Wnested-externs -Wshadow
-CFLAGS  += -O2 -g $(WARNINGS) -DHAVE_CONFIG_H
+CFLAGS  += -O4 -g $(WARNINGS) -DHAVE_CONFIG_H
 CINCLUDES = include silk celt .
 
 ifdef FIXED_POINT

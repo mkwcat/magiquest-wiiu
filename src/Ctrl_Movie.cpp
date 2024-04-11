@@ -172,6 +172,7 @@ void Ctrl_Movie::process()
         if (frameId == 0) {
             // Next audio
             if (!OSReceiveMessage(&m_audioNotifyQueue, &msg, OS_MESSAGE_FLAGS_NONE)) {
+                LOG(LogMP4, "Missed audio frame");
                 return;
             }
 
@@ -834,12 +835,8 @@ int Ctrl_Movie::Decoder::OGGRead(void* object, u8* ptr, int count)
 
 int Ctrl_Movie::Decoder::OGGSeek(void* object, opus_int64 offset, int whence)
 {
-    assert(object != nullptr);
-    auto decoder = reinterpret_cast<Decoder*>(object);
-
-    Lock l(sys()->FileMutex());
-
-    return fseek(decoder->m_audioFile, offset, whence);
+    // Disable seeking to improve start performance
+    return -1;
 }
 
 int Ctrl_Movie::Decoder::OGGClose(void* object)
