@@ -14,10 +14,10 @@
 *.rpx
 *.wuhb
 
-# Data files
-content
-meta
+# Local scripts
+*.bat
 
 # Editor files
 .vscode
 *.kate-swp
+work
