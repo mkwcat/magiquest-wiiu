@@ -29,14 +29,14 @@
 #include "Page_CastModeConfirm.hpp"
 #include "Page_DuelGolem.hpp"
 #include "Page_DuelXavier.hpp"
+#include "Page_EncounterSelect.hpp"
 #include "Page_ModeSelect.hpp"
 #include "Page_Movie.hpp"
 
 System* System::s_instance = nullptr;
 
 System::System()
-  : CThread(
-      CThread::eAttributeAffCore1 | CThread::eAttributePinnedAff, 0, 0x80000)
+  : CThread(CThread::eAttributeAffCore1 | CThread::eAttributePinnedAff, 0, 0x80000)
   , m_video(new CVideo(GX2_TV_SCAN_MODE_1080P))
   , m_gamepad(GuiTrigger::CHANNEL_1)
   , m_imgCursor(nullptr)
@@ -49,6 +49,12 @@ System::System()
       },
       {
         .id = PageID::Background,
+        .tv = false,
+        .drc = false,
+        .element = nullptr,
+      },
+      {
+        .id = PageID::EncounterSelect,
         .tv = false,
         .drc = false,
         .element = nullptr,
@@ -89,9 +95,9 @@ System::System()
     // Construct page objects
     m_pages[u32(PageID::Movie)].element = new Page_Movie();
     m_pages[u32(PageID::Background)].element = new Page_Background();
+    m_pages[u32(PageID::EncounterSelect)].element = new Page_EncounterSelect();
     m_pages[u32(PageID::ModeSelect)].element = new Page_ModeSelect();
     m_pages[u32(PageID::CastModeConfirm)].element = new Page_CastModeConfirm();
-    m_pages[u32(PageID::TouchDuel)].element = new Page_DuelGolem();
 
     m_imgCursorTimer = 0;
     m_frameId = 0;
@@ -136,9 +142,13 @@ void System::Start()
 
 void System::executeThread()
 {
+    for (u32 i = 0; i < PageCount; i++) {
+        m_nextSetting[i] = m_pages[i];
+    }
+
     ShowPage(System::PageID::Movie, System::Display::TV);
     ShowPage(System::PageID::Background, System::Display::DRC);
-    ShowPage(System::PageID::ModeSelect, System::Display::DRC);
+    ShowPage(System::PageID::EncounterSelect, System::Display::DRC);
 
     WaitVSync();
 
@@ -149,10 +159,8 @@ void System::executeThread()
     }
     m_imgCursor.setImageData(&m_imgCursorData);
 
-    ProcUIRegisterCallback(
-      PROCUI_CALLBACK_ACQUIRE, CallbackAcquire, nullptr, 100);
-    ProcUIRegisterCallback(
-      PROCUI_CALLBACK_RELEASE, CallbackRelease, nullptr, 100);
+    ProcUIRegisterCallback(PROCUI_CALLBACK_ACQUIRE, CallbackAcquire, nullptr, 100);
+    ProcUIRegisterCallback(PROCUI_CALLBACK_RELEASE, CallbackRelease, nullptr, 100);
 
     while (Tick()) {
         WaitVSync();
@@ -238,7 +246,7 @@ bool System::IsAroma()
 void System::ShowPage(PageID page, Display display)
 {
     assert(u32(page) < u32(PageID::PageCount));
-    auto set = &m_pages[u32(page)];
+    auto set = &m_nextSetting[u32(page)];
 
     LOG(LogSystem, "Showing page %d on display %d", page, display);
 
@@ -261,7 +269,7 @@ void System::ShowPage(PageID page, Display display)
 void System::HidePage(PageID page, Display display)
 {
     assert(u32(page) < u32(PageID::PageCount));
-    auto set = &m_pages[u32(page)];
+    auto set = &m_nextSetting[u32(page)];
 
     LOG(LogSystem, "Hiding page %d from display %d", page, display);
 
@@ -297,8 +305,7 @@ bool System::Tick()
     m_wand->Update(&curX, &curY, &curZ, &curValid);
 
     if (m_wand->IsCast()) {
-        if (m_wand->GetCastMode() == Wand::CastMode::WiiRemoteCastRune &&
-            curValid) {
+        if (m_wand->GetCastMode() == Wand::CastMode::WiiRemoteCastRune && curValid) {
             m_imgCursorTimer = 60;
             m_imgCursor.setPosition(curX, curY);
             LOG(LogSystem, "Cast at %f, %f", curX, curY);
@@ -307,15 +314,21 @@ bool System::Tick()
         for (u32 i = 0; i < PageCount; i++) {
             auto handler = dynamic_cast<WandHandler*>(m_pages[i].element);
             if (handler != nullptr)
-                handler->Cast(
-                  m_wand->GetCastMode(), curValid, curX, curY, curZ);
+                handler->Cast(m_wand->GetCastMode(), curValid, curX, curY, curZ);
         }
     }
 
-    bool update =
-      m_gamepad.update(m_video->getTvWidth(), m_video->getTvHeight());
+    for (u32 i = 0; i < PageCount; i++) {
+        m_pages[i] = m_nextSetting[i];
+    }
+
+    bool update = m_gamepad.update(m_video->getTvWidth(), m_video->getTvHeight());
 
     for (auto set : m_pages) {
+        if (set.element == nullptr) {
+            continue;
+        }
+
         set.element->process();
 
         if (set.drc && update) {
@@ -327,6 +340,10 @@ bool System::Tick()
 
     m_video->prepareDrcRendering();
     for (auto set : m_pages) {
+        if (set.element == nullptr) {
+            continue;
+        }
+
         if (set.drc) {
             set.element->draw(m_video);
         }
@@ -341,6 +358,10 @@ bool System::Tick()
 
     m_video->prepareTvRendering();
     for (auto set : m_pages) {
+        if (set.element == nullptr) {
+            continue;
+        }
+
         if (set.tv) {
             set.element->draw(m_video);
         }
@@ -373,9 +394,23 @@ int main(int argc, char** argv)
 
     Exception::Init();
 
-    chdir("wiiu/apps/magiquest-wiiu/content");
-    // chdir("/vol/content");
+    // Automatically detect content directory
+    FILE* f = nullptr;
+    if ((f = fopen("MQ-Version.txt", "r")) != nullptr) {
+        fclose(f);
+        // chdir(".");
+    } else if ((f = fopen("/vol/content/MQ-Version.txt", "r")) != nullptr) {
+        fclose(f);
+        chdir("/vol/content");
+    } else if ((f = fopen("wiiu/apps/magiquest-wiiu/content/MQ-Version.txt", "r")) != nullptr) {
+        fclose(f);
+        chdir("wiiu/apps/magiquest-wiiu/content");
+    } else {
+        LOG(LogSystem, "Failed to find content directory");
+        return EXIT_FAILURE;
+    }
 
+    // Initialize GUI memory
     libgui_memoryInitialize();
 
     // Create the audio manager

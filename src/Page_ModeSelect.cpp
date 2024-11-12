@@ -14,10 +14,6 @@ Page_ModeSelect::Page_ModeSelect()
   , m_btnCastDuel(520, 200)
   , m_btnRealWand(520, 200)
 {
-}
-
-void Page_ModeSelect::Init()
-{
     m_title.Load(RES_ROOT "/Image/Menu/Title/ModeSelect.png");
     m_title.setPosition(0, 370);
     m_title.setScaleX(1.8);
@@ -31,8 +27,7 @@ void Page_ModeSelect::Init()
     m_btnTouchDuel.setImage(&m_bannerTouchDuel);
     m_btnTouchDuel.setPosition(-375, 130);
     m_btnTouchDuel.setTrigger(&m_touchTrigger);
-    m_btnTouchDuel.clicked.connect<Page_ModeSelect>(
-      this, &Page_ModeSelect::OnSelectTouchDuel);
+    m_btnTouchDuel.clicked.connect<Page_ModeSelect>(this, &Page_ModeSelect::OnSelectTouchDuel);
 
     append(&m_btnTouchDuel);
 
@@ -42,8 +37,7 @@ void Page_ModeSelect::Init()
     m_btnCastDuel.setImage(&m_bannerCastDuel);
     m_btnCastDuel.setPosition(375, 130);
     m_btnCastDuel.setTrigger(&m_touchTrigger);
-    m_btnCastDuel.clicked.connect<Page_ModeSelect>(
-      this, &Page_ModeSelect::OnSelectCastDuel);
+    m_btnCastDuel.clicked.connect<Page_ModeSelect>(this, &Page_ModeSelect::OnSelectCastDuel);
 
     append(&m_btnCastDuel);
 
@@ -53,20 +47,13 @@ void Page_ModeSelect::Init()
     m_btnRealWand.setImage(&m_bannerRealWand);
     m_btnRealWand.setPosition(0, -220);
     m_btnRealWand.setTrigger(&m_touchTrigger);
-    m_btnRealWand.clicked.connect<Page_ModeSelect>(
-      this, &Page_ModeSelect::OnSelectRealWand);
+    m_btnRealWand.clicked.connect<Page_ModeSelect>(this, &Page_ModeSelect::OnSelectRealWand);
 
     append(&m_btnRealWand);
 }
 
 void Page_ModeSelect::process()
 {
-    if (!m_initialized) {
-        Init();
-        m_initialized = true;
-    }
-
-    GuiFrame::process();
 }
 
 void Page_ModeSelect::OnSelectTouchDuel(
@@ -74,12 +61,10 @@ void Page_ModeSelect::OnSelectTouchDuel(
 {
     LOG(LogSystem, "Select Touch Duel");
 
-    System::s_instance->GetWand()->SetCastMode(
-      Wand::CastMode::WiiRemoteTouchRune);
+    System::s_instance->GetWand()->SetCastMode(Wand::CastMode::WiiRemoteTouchRune);
 
     System::s_instance->HidePage(System::GetPageID(this), System::Display::All);
-    System::s_instance->ShowPage(
-      System::GetPageID<Encounter>(), System::Display::DRC);
+    System::s_instance->ShowPage(System::GetPageID<Encounter>(), System::Display::DRC);
     System::GetPageStatic<Encounter>()->Transition();
 }
 
@@ -88,12 +73,10 @@ void Page_ModeSelect::OnSelectCastDuel(
 {
     LOG(LogSystem, "Select Cast Duel");
 
-    System::s_instance->GetWand()->SetCastMode(
-      Wand::CastMode::WiiRemoteCastRune);
+    System::s_instance->GetWand()->SetCastMode(Wand::CastMode::WiiRemoteCastRune);
 
     System::s_instance->HidePage(System::GetPageID(this), System::Display::All);
-    System::s_instance->ShowPage(
-      System::GetPageID<Page_CastModeConfirm>(), System::Display::DRC);
+    System::s_instance->ShowPage(System::GetPageID<Page_CastModeConfirm>(), System::Display::DRC);
 }
 
 void Page_ModeSelect::OnSelectRealWand(
@@ -104,9 +87,7 @@ void Page_ModeSelect::OnSelectRealWand(
     System::s_instance->GetWand()->SetCastMode(Wand::CastMode::RealWand);
 
     System::s_instance->HidePage(System::GetPageID(this), System::Display::All);
-    System::s_instance->HidePage(
-      System::GetPageID<Page_Background>(), System::Display::All);
-    System::s_instance->ShowPage(
-      System::GetPageID<Encounter>(), System::Display::DRC);
+    System::s_instance->HidePage(System::GetPageID<Page_Background>(), System::Display::All);
+    System::s_instance->ShowPage(System::GetPageID<Encounter>(), System::Display::DRC);
     System::GetPageStatic<Encounter>()->Transition();
 }

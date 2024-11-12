@@ -15,28 +15,19 @@ class Page_ModeSelect : public GuiFrame, public sigslot::has_slots<>
 public:
     Page_ModeSelect();
 
-private:
-    void Init();
-
-public:
     /**
      * GuiElement process.
      */
     void process() override;
 
 private:
-    void OnSelectTouchDuel(
-      GuiButton* button, const GuiController* controller, GuiTrigger* trigger);
+    void OnSelectTouchDuel(GuiButton* button, const GuiController* controller, GuiTrigger* trigger);
 
-    void OnSelectCastDuel(
-      GuiButton* button, const GuiController* controller, GuiTrigger* trigger);
+    void OnSelectCastDuel(GuiButton* button, const GuiController* controller, GuiTrigger* trigger);
 
-    void OnSelectRealWand(
-      GuiButton* button, const GuiController* controller, GuiTrigger* trigger);
+    void OnSelectRealWand(GuiButton* button, const GuiController* controller, GuiTrigger* trigger);
 
 private:
-    bool m_initialized = false;
-
     Ctrl_Image m_title;
 
     Ctrl_Image m_bannerTouchDuel;

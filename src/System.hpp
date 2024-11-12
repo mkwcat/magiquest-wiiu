@@ -30,6 +30,7 @@ public:
     enum class PageID {
         Movie,
         Background,
+        EncounterSelect,
         ModeSelect,
         CastModeConfirm,
         TouchDuel,
@@ -92,8 +93,7 @@ public:
 
         // Find the page with the specified type
         for (u32 i = 0; i < u32(PageID::PageCount); i++) {
-            if ((page = dynamic_cast<T*>(s_instance->m_pages[i].element)) !=
-                nullptr) {
+            if ((page = dynamic_cast<T*>(s_instance->m_pages[i].element)) != nullptr) {
                 return page;
             }
         }
@@ -112,8 +112,7 @@ public:
 
         // Find the page with the specified type
         for (u32 i = 0; i < u32(PageID::PageCount); i++) {
-            if ((page = dynamic_cast<T*>(s_instance->m_pages[i].element)) !=
-                nullptr) {
+            if ((page = dynamic_cast<T*>(s_instance->m_pages[i].element)) != nullptr) {
                 return PageID(i);
             }
         }
@@ -136,6 +135,14 @@ public:
     PageSetting* GetSetting(PageID page)
     {
         return &m_pages[u32(page)];
+    }
+
+    /**
+     * Get the page setting struct for the next frame.
+     */
+    PageSetting* GetNextSetting(PageID page)
+    {
+        return &m_nextSetting[u32(page)];
     }
 
     /**
@@ -187,6 +194,7 @@ protected:
     OSMutex m_fileMutex = {};
 
     PageSetting m_pages[PageCount];
+    PageSetting m_nextSetting[PageCount];
 
     u32 m_frameId = 0;
 };

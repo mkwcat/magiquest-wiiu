@@ -68,6 +68,9 @@ export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
 
 export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
+export CONTENT 	:=  $(CURDIR)/content
+export META		:=	$(CURDIR)/meta
+
 CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 sFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
@@ -101,10 +104,13 @@ export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(dir)) \
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)) $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
 
-.PHONY: $(BUILD) clean all
+.PHONY: $(BUILD) clean all wuhb
 
 #-------------------------------------------------------------------------------
 all: $(BUILD)
+wuhb:
+	@[ -d $(BUILD) ] || mkdir -p $(BUILD)
+	@$(MAKE) wuhb --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
@@ -117,19 +123,25 @@ clean:
 
 #-------------------------------------------------------------------------------
 else
-.PHONY:	all
+.PHONY:	all wuhb
 
 DEPENDS	:=	$(OFILES:.o=.d)
 
 #-------------------------------------------------------------------------------
 # main targets
 #-------------------------------------------------------------------------------
-all	:	$(OUTPUT).rpx
+all:	$(OUTPUT).rpx
+wuhb:	$(OUTPUT).wuhb
 
-$(OUTPUT).rpx	:	$(OUTPUT).elf
-$(OUTPUT).elf	:	$(OFILES)
+# https://stackoverflow.com/a/18258352
+rwildcard=$(foreach d,$(wildcard $(1:=/*)), $(call rwildcard,$d,$2) $(filter $(subst *,%,$2), $d))
 
-$(OFILES_SRC)	: $(HFILES_BIN)
+$(OUTPUT).wuhb:	$(OUTPUT).rpx $(META)/boot.png $(META)/iconTex.png $(call rwildcard,$(CONTENT),*)
+	@wuhbtool $(OUTPUT).rpx $@ --content=$(CONTENT) --icon=$(META)/iconTex.png --tv-image=$(META)/boot.png --drc-image=$(META)/boot.png
+$(OUTPUT).rpx:	$(OUTPUT).elf
+$(OUTPUT).elf:	$(OFILES)
+
+$(OFILES_SRC): $(HFILES_BIN)
 
 #-------------------------------------------------------------------------------
 # you need a rule like this for each extension you use as binary data
