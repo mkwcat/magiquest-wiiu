@@ -18,8 +18,7 @@ enum {
     IMG_NOTSELECTABLE = 6,
 };
 
-void Page_DuelXavier::InitSpell(
-  Spell spell, const char** images, int posX, int posY)
+void Page_DuelXavier::InitSpell(Spell spell, const char** images, int posX, int posY)
 {
     u32 btn = u32(spell);
     assert(btn < SpellCount);
@@ -48,11 +47,6 @@ void Page_DuelXavier::InitSpell(
 
 void Page_DuelXavier::Init()
 {
-    auto page = System::GetPageStatic<Page_Movie>();
-    assert(page != nullptr);
-
-    page->SetEncounter(this);
-
     m_imgManaLeft.Update(Ctrl_Mana::Left, 0);
     m_imgManaRight.Update(Ctrl_Mana::Right, 0);
 
@@ -181,8 +175,12 @@ void Page_DuelXavier::process()
 
 void Page_DuelXavier::Transition()
 {
-    System::GetPageStatic<Page_Background>()->SetImage(
-      Page_Background::ImageType::TouchDuelXavier);
+    auto movie = System::GetPageStatic<Page_Movie>();
+    assert(movie != nullptr);
+
+    movie->SetEncounter(this);
+
+    System::GetPageStatic<Page_Background>()->SetImage(Page_Background::ImageType::TouchDuelXavier);
 }
 
 const char* Page_DuelXavier::NextPhase(Spell castSpell)
@@ -252,8 +250,7 @@ const char* Page_DuelXavier::NextPhase(Spell castSpell)
             // Warrior has no retreat phase after it, so if it happens to be the
             // last attack phase then it won't even show up due to Xavier
             // already being out of mana. This check ensures that never happens.
-            if (numPhaseLeft <= 2 &&
-                !m_doneAttackPhase[u32(AttackPhase::Warrior)]) {
+            if (numPhaseLeft <= 2 && !m_doneAttackPhase[u32(AttackPhase::Warrior)]) {
                 random = u32(AttackPhase::Warrior);
             } else {
                 random = rand() % numPhaseLeft;
@@ -411,31 +408,26 @@ const char* Page_DuelXavier::NextMovie()
 
     m_currentPhase = m_nextPhase;
 
-    if (m_isInputPhase && castSpell != Spell::None &&
-        castSpell != Spell::Warrior) {
+    if (m_isInputPhase && castSpell != Spell::None && castSpell != Spell::Warrior) {
         m_buttonUses[int(castSpell)]++;
     }
 
     auto name = NextPhase(castSpell);
     assert(!!name);
-    snprintf(m_phaseMoviePath, sizeof(m_phaseMoviePath),
-      RES_ROOT "/Movie/Xavier/%s.mp4", name);
+    snprintf(m_phaseMoviePath, sizeof(m_phaseMoviePath), RES_ROOT "/Movie/Xavier/%s.mp4", name);
 
     // Disable all buttons
     for (u32 i = 0; i < SpellCount; i++) {
         switch (m_buttonUses[i]) {
         case 0:
-            m_buttons[i].SetImages(
-              IMG_SELECTED, IMG_NOTSELECTED, IMG_NOTSELECTED);
+            m_buttons[i].SetImages(IMG_SELECTED, IMG_NOTSELECTED, IMG_NOTSELECTED);
             break;
         case 1:
-            m_buttons[i].SetImages(
-              IMG_HALF_SELECTED, IMG_HALF_NOTSELECTED, IMG_HALF_NOTSELECTED);
+            m_buttons[i].SetImages(IMG_HALF_SELECTED, IMG_HALF_NOTSELECTED, IMG_HALF_NOTSELECTED);
             break;
         case 2:
         default:
-            m_buttons[i].SetImages(
-              IMG_SELECTED, IMG_NOTSELECTABLE, IMG_NOTSELECTABLE);
+            m_buttons[i].SetImages(IMG_SELECTED, IMG_NOTSELECTABLE, IMG_NOTSELECTABLE);
             break;
         }
 
@@ -454,8 +446,9 @@ void Page_DuelXavier::NextFrame(u32 frame)
     if (m_castSpell != Spell::None && m_castSpell != Spell::Warrior) {
         // Hardcoded ending frames for when Xavier is not on screen
         for (u32 f : {96, 225, 339}) {
-            if (frame == f)
+            if (frame == f) {
                 ForceNextMovie();
+            }
         }
     }
 }
@@ -470,8 +463,7 @@ void Page_DuelXavier::Cast(
         return;
     }
 
-    if (castMode == Wand::CastMode::WiiRemoteCastRune && curValid &&
-        m_isInputPhase &&
+    if (castMode == Wand::CastMode::WiiRemoteCastRune && curValid && m_isInputPhase &&
         (curX < 640 && curX > -640 && curY < 450 && curY > -450)) {
         for (u32 i = 0; i < SpellCount; i++) {
             if (!m_buttons[i].IsSelectable())
@@ -479,8 +471,7 @@ void Page_DuelXavier::Cast(
 
             auto x = m_buttons[i].getCenterX();
             auto y = m_buttons[i].getCenterY();
-            if (curX > x - 240 && curX < x + 240 && curY > y - 240 &&
-                curY < y + 240) {
+            if (curX > x - 240 && curX < x + 240 && curY > y - 240 && curY < y + 240) {
                 DeselectAll();
                 m_buttons[i].Select();
             }
@@ -501,24 +492,23 @@ void Page_DuelXavier::Cast(
     }
 
     for (u32 i = 0; i < SpellCount; i++) {
-        if (!m_buttons[i].IsSelected())
+        if (!m_buttons[i].IsSelected()) {
             continue;
+        }
 
         DeselectAll();
         for (u32 j = 0; j < SpellCount; j++) {
             switch (m_buttonUses[j]) {
             case 0:
-                m_buttons[j].SetImages(
-                  IMG_SELECTED, IMG_NOTSELECTED, IMG_NOTSELECTED);
+                m_buttons[j].SetImages(IMG_SELECTED, IMG_NOTSELECTED, IMG_NOTSELECTED);
                 break;
             case 1:
-                m_buttons[j].SetImages(IMG_HALF_SELECTED, IMG_HALF_NOTSELECTED,
-                  IMG_HALF_NOTSELECTED);
+                m_buttons[j].SetImages(
+                  IMG_HALF_SELECTED, IMG_HALF_NOTSELECTED, IMG_HALF_NOTSELECTED);
                 break;
             case 2:
             default:
-                m_buttons[j].SetImages(
-                  IMG_SELECTED, IMG_NOTSELECTABLE, IMG_NOTSELECTABLE);
+                m_buttons[j].SetImages(IMG_SELECTED, IMG_NOTSELECTABLE, IMG_NOTSELECTABLE);
                 break;
             }
         }
@@ -528,8 +518,7 @@ void Page_DuelXavier::Cast(
             m_buttons[i].SetImages(IMG_SELECTED, IMG_CASTED, IMG_NOTSELECTED);
             break;
         case 1:
-            m_buttons[i].SetImages(
-              IMG_HALF_SELECTED, IMG_HALF_CASTED, IMG_HALF_NOTSELECTED);
+            m_buttons[i].SetImages(IMG_HALF_SELECTED, IMG_HALF_CASTED, IMG_HALF_NOTSELECTED);
             break;
         }
         m_castSpell = Spell(i);

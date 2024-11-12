@@ -53,11 +53,6 @@ void Page_DuelGolem::InitSpell(Spell spell, const char** images, int posX, int p
 
 void Page_DuelGolem::Init()
 {
-    auto page = System::GetPageStatic<Page_Movie>();
-    assert(page != nullptr);
-
-    page->SetEncounter(this);
-
     m_manaLeft.Update(Ctrl_Mana::Left, 0);
     m_manaRight.Update(Ctrl_Mana::Right, 0);
 
@@ -129,6 +124,11 @@ void Page_DuelGolem::process()
 
 void Page_DuelGolem::Transition()
 {
+    auto movie = System::GetPageStatic<Page_Movie>();
+    assert(movie != nullptr);
+
+    movie->SetEncounter(this);
+
     System::GetPageStatic<Page_Background>()->SetImage(
       Page_Background::ImageType::TouchDuelBlizzardDawn);
 }
