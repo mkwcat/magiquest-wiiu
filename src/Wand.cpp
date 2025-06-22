@@ -7,25 +7,7 @@
 #include "Util.hpp"
 #include <padscore/kpad.h>
 #include <padscore/wpad.h>
-
-// These are not defined by wut for whatever reason.
-typedef struct {
-    u16 x; // Resolution is 1024
-    u16 y; // Resolution is 768
-    u16 size;
-    u8 ID;
-    u8 pad;
-} _IRObject;
-
-typedef struct {
-    u16 buttons;
-    u16 accelX; // Resolution is 1024
-    u16 accelY; // Resolution is 1024
-    u16 accelZ; // Resolution is 1024
-    _IRObject ir[4];
-    u8 ext;
-    u8 err;
-} _WPADStatus;
+#include <vpad/input.h>
 
 WPADChan GetChanByInt(int chan)
 {
@@ -99,6 +81,17 @@ void Wand::UpdateAcc(float x, float y, float z)
 
 void Wand::Update(float* curX, float* curY, float* curZ, bool* curValid)
 {
+    // Check gamepad for test cast
+    VPADStatus vpadStatus;
+    VPADReadError vpadErr;
+    if (VPADRead(VPAD_CHAN_0, &vpadStatus, 1, &vpadErr) == 1) {
+        if (vpadStatus.trigger & VPAD_BUTTON_UP) {
+            m_testCasted = true;
+        } else {
+            m_testCasted = false;
+        }
+    }
+
     if (m_timer > 0) {
         m_timer--;
     }
@@ -112,7 +105,7 @@ void Wand::Update(float* curX, float* curY, float* curZ, bool* curValid)
             return;
         }
 
-        u8 rawData[0x800] alignas(32);
+        alignas(32) u8 rawData[0x800];
         WPADExtensionType extType;
         s32 irCnt = 0;
 
@@ -123,12 +116,12 @@ void Wand::Update(float* curX, float* curY, float* curZ, bool* curValid)
             if (extType == WPAD_EXT_PRO_CONTROLLER)
                 continue;
 
-            WPADRead(GetChanByInt(i), rawData);
+            WPADRead(GetChanByInt(i), reinterpret_cast<WPADStatus*>(rawData));
 
-            _WPADStatus* data = reinterpret_cast<_WPADStatus*>(rawData);
+            WPADStatus* data = reinterpret_cast<WPADStatus*>(rawData);
 
             for (int j = 0; j < 4; j++) {
-                if (data->ir[j].size != 0)
+                if (data->ir[j].pixels != 0)
                     irCnt++;
             }
         }
@@ -234,7 +227,7 @@ bool Wand::IsCast()
         return true;
     }
 
-    return false;
+    return m_testCasted;
 }
 
 Wand::CastMode Wand::GetCastMode() const

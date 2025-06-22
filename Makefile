@@ -30,6 +30,7 @@ include $(DEVKITPRO)/wut/share/wut_rules
 TARGET		:=	magiquest-wiiu
 BUILD		:=	build
 BUILD_DBG	:=	$(TARGET)_dbg
+CODEDIR     :=  code
 SOURCES		:=  src
 
 #-------------------------------------------------------------------------------
@@ -45,12 +46,12 @@ CXXFLAGS	:= $(CFLAGS)
 ASFLAGS	:=	$(ARCH)
 LDFLAGS	=	$(ARCH) $(RPXSPECS) -Wl,-Map,$(notdir $*.map) -Wl,--gc-sections
 
-LIBS	:=  -lgui -lfreetype -lgd -lpng -ljpeg -lz -lmad -lopusfile -lopus -logg -lbz2 -lwut
+LIBS	:=  -lgui -lfreetype -lgd -lpng -ljpeg -lz -lopusfile -lopus -logg -lwut
 
 #-------------------------------------------------------------------------------
 # list of directories containing libraries
 #-------------------------------------------------------------------------------
-LIBDIRS	:= $(PORTLIBS) $(WUT_ROOT) $(WUT_ROOT)/usr $(CURDIR)/vendor/libopus $(CURDIR)/vendor/opusfile
+LIBDIRS	:= $(PORTLIBS) $(WUT_ROOT) $(WUT_ROOT)/usr $(CURDIR)/vendor/libopus $(CURDIR)/vendor/opusfile $(CURDIR)/vendor/libgui
 INCLUDES	:= $(CURDIR)/src $(PORTLIBS)/include/freetype2
 
 #-------------------------------------------------------------------------------
@@ -60,7 +61,7 @@ INCLUDES	:= $(CURDIR)/src $(PORTLIBS)/include/freetype2
 ifneq ($(BUILD),$(notdir $(CURDIR)))
 #-------------------------------------------------------------------------------
 
-export OUTPUT	:=	$(CURDIR)/$(TARGET)
+export OUTPUT	:=	$(CURDIR)/$(CODEDIR)/$(TARGET)
 export TOPDIR	:=	$(CURDIR)
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
@@ -109,17 +110,17 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)) $(foreach dir,$(LIBDIRS),-
 #-------------------------------------------------------------------------------
 all: $(BUILD)
 wuhb:
-	@[ -d $(BUILD) ] || mkdir -p $(BUILD)
+	@[ -d $(BUILD) ] || mkdir -p $(BUILD) $(CODEDIR)
 	@$(MAKE) wuhb --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 $(BUILD):
-	@[ -d $@ ] || mkdir -p $@
+	@[ -d $@ ] || mkdir -p $@ $(CODEDIR)
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 #-------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).rpx $(TARGET).elf $(OUTPUT).bin
+	@rm -fr $(BUILD) $(CODEDIR) $(TARGET).elf $(OUTPUT).bin
 
 #-------------------------------------------------------------------------------
 else

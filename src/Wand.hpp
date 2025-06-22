@@ -50,6 +50,7 @@ public:
 
 private:
     bool m_casted;
+    bool m_testCasted = false;
 
     bool m_curPosValid = false;
     float m_curPosX = 0;

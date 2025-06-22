@@ -13,7 +13,6 @@
 #include <coreinit/dynload.h>
 #include <cstdlib>
 #include <gui/memory.h>
-#include <gui/sounds/SoundHandler.hpp>
 #include <gui/video/CVideo.h>
 #include <proc_ui/procui.h>
 #include <whb/crash.h>
@@ -114,9 +113,9 @@ System::~System()
     AXManager::s_instance->Shutdown();
 
     for (auto set : m_pages) {
-        LOG(LogSystem, "Deleting page %d", set.id);
+        LOG(LogSystem, "Deleting page %d", static_cast<int>(set.id));
         delete set.element;
-        LOG(LogSystem, "Deleted page %d", set.id);
+        LOG(LogSystem, "Deleted page %d", static_cast<int>(set.id));
         set.element = nullptr;
     }
 
@@ -248,7 +247,8 @@ void System::ShowPage(PageID page, Display display)
     assert(u32(page) < u32(PageID::PageCount));
     auto set = &m_nextSetting[u32(page)];
 
-    LOG(LogSystem, "Showing page %d on display %d", page, display);
+    LOG(LogSystem, "Showing page %d on display %d", static_cast<int>(page),
+      static_cast<int>(display));
 
     switch (display) {
     case Display::TV:
@@ -271,7 +271,8 @@ void System::HidePage(PageID page, Display display)
     assert(u32(page) < u32(PageID::PageCount));
     auto set = &m_nextSetting[u32(page)];
 
-    LOG(LogSystem, "Hiding page %d from display %d", page, display);
+    LOG(LogSystem, "Hiding page %d from display %d", static_cast<int>(page),
+      static_cast<int>(display));
 
     switch (display) {
     case Display::TV:
