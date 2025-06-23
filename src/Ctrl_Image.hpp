@@ -17,6 +17,7 @@ public:
     {
         ResourceManager::GetImage(&m_data, path);
         setImageData(&m_data);
+        assert(m_data.getTexture() != nullptr);
     }
 
 private:

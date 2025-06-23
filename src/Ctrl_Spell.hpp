@@ -29,7 +29,7 @@ public:
     {
     }
 
-    void Init(const char* name, const char** images, u32 imageCount)
+    void Init(const char* name, const char* root, const char* const* images, u32 imageCount)
     {
         assert(strlen(name) < 32);
         strcpy(m_name, name);
@@ -41,7 +41,9 @@ public:
 
         // Init loop
         for (u32 i = 0; i < imageCount; i++) {
-            m_images[i].Load(images[i]);
+            char path[256];
+            snprintf(path, sizeof(path), "%s/%s.png", root, images[i]);
+            m_images[i].Load(path);
         }
     }
 
@@ -114,8 +116,7 @@ public:
     /**
      * Called when the user touches the icon.
      */
-    void OnClick(
-      GuiButton* button, const GuiController* controller, GuiTrigger* trigger)
+    void OnClick(GuiButton* button, const GuiController* controller, GuiTrigger* trigger)
     {
         if (!m_selectable)
             return;
@@ -127,8 +128,7 @@ public:
     /**
      * Called when the user stops touching the icon.
      */
-    void OnReleased(
-      GuiButton* button, const GuiController* controller, GuiTrigger* trigger)
+    void OnReleased(GuiButton* button, const GuiController* controller, GuiTrigger* trigger)
     {
         m_onReleaseHandler(this);
     }

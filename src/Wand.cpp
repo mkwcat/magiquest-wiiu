@@ -82,15 +82,15 @@ void Wand::UpdateAcc(float x, float y, float z)
 void Wand::Update(float* curX, float* curY, float* curZ, bool* curValid)
 {
     // Check gamepad for test cast
-    VPADStatus vpadStatus;
-    VPADReadError vpadErr;
-    if (VPADRead(VPAD_CHAN_0, &vpadStatus, 1, &vpadErr) == 1) {
-        if (vpadStatus.trigger & VPAD_BUTTON_UP) {
-            m_testCasted = true;
-        } else {
-            m_testCasted = false;
-        }
-    }
+    // VPADStatus vpadStatus;
+    // VPADReadError vpadErr;
+    // if (VPADRead(VPAD_CHAN_0, &vpadStatus, 1, &vpadErr) == 1) {
+    //     if (vpadStatus.trigger & VPAD_BUTTON_UP) {
+    //         m_testCasted = true;
+    //     } else {
+    //         m_testCasted = false;
+    //     }
+    // }
 
     if (m_timer > 0) {
         m_timer--;

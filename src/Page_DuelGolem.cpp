@@ -31,7 +31,7 @@ void Page_DuelGolem::InitSpell(Spell spell, const char** images, int posX, int p
     u32 btn = u32(spell);
     assert(btn < SpellCount);
 
-    m_buttons[btn].Init("SpellButton", images, 2);
+    m_buttons[btn].Init("SpellButton", RES_ROOT "/Image/Encounter/Spell/Golem", images, 2);
     m_buttons[btn].SetImages(IMG_SELECTED, IMG_NOTSELECTED, IMG_NOTSELECTED);
 
     m_buttons[btn].SetOnSelectHandler([&](Ctrl_Spell* spell) {
@@ -70,37 +70,29 @@ void Page_DuelGolem::Init()
     append(&m_manaRight);
 
     static const char* MagmaImages[] = {
-      [IMG_NOTSELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/Magma.png",
-      [IMG_SELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/MagmaSelected.png",
+      [IMG_NOTSELECTED] = "Magma",
+      [IMG_SELECTED] = "MagmaSelected",
     };
 
     InitSpell(Spell::Magma, MagmaImages, -600, 0);
 
     static const char* ChiselImages[] = {
-      [IMG_NOTSELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/Chisel.png",
-      [IMG_SELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/ChiselSelected.png",
+      [IMG_NOTSELECTED] = "Chisel",
+      [IMG_SELECTED] = "ChiselSelected",
     };
 
     InitSpell(Spell::Chisel, ChiselImages, -200, 0);
 
     static const char* CloudHammerImages[] = {
-      [IMG_NOTSELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/CloudHammer.png",
-      [IMG_SELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/CloudHammerSelected.png",
+      [IMG_NOTSELECTED] = "CloudHammer",
+      [IMG_SELECTED] = "CloudHammerSelected",
     };
 
     InitSpell(Spell::CloudHammer, CloudHammerImages, 200, 0);
 
     static const char* ThunderImages[] = {
-      [IMG_NOTSELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/Thunder.png",
-      [IMG_SELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/ThunderSelected.png",
+      [IMG_NOTSELECTED] = "Thunder",
+      [IMG_SELECTED] = "ThunderSelected",
     };
 
     InitSpell(Spell::Thunder, ThunderImages, 600, 0);

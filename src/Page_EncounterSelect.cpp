@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "Page_EncounterSelect.hpp"
+#include "Page_DuelDragon.hpp"
 #include "Page_DuelGolem.hpp"
 #include "Page_DuelXavier.hpp"
 #include "Page_ModeSelect.hpp"
@@ -35,8 +36,9 @@ Page_EncounterSelect::Page_EncounterSelect()
           this, &Page_EncounterSelect::OnSelect);
     }
 
-    RegisterEncounter(0, "Xavier", new Page_DuelXavier());
-    RegisterEncounter(1, "Golem", new Page_DuelGolem());
+    RegisterEncounter(0, "Dragon", new Page_DuelDragon());
+    RegisterEncounter(1, "Xavier", new Page_DuelXavier());
+    RegisterEncounter(2, "Golem", new Page_DuelGolem());
 }
 
 void Page_EncounterSelect::process()

@@ -25,7 +25,7 @@ void Page_DuelXavier::InitSpell(Spell spell, const char** images, int posX, int 
 
     m_buttonUses[btn] = 0;
 
-    m_buttons[btn].Init("SpellButton", images, 7);
+    m_buttons[btn].Init("SpellButton", RES_ROOT "/Image/Encounter/Spell/Xavier", images, 7);
     m_buttons[btn].SetImages(IMG_SELECTED, IMG_NOTSELECTED, IMG_NOTSELECTED);
 
     m_buttons[btn].SetOnSelectHandler([&](Ctrl_Spell* spell) {
@@ -64,97 +64,61 @@ void Page_DuelXavier::Init()
     append(&m_imgManaRight);
 
     static const char* KreigerImages[] = {
-      [IMG_NOTSELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/Kreiger.png",
-      [IMG_SELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/KreigerSelected.png",
-      [IMG_CASTED] = RES_ROOT //
-      "/Image/Encounter/Spell/KreigerCasted.png",
-      [IMG_HALF_NOTSELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/KreigerHalf.png",
-      [IMG_HALF_SELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/KreigerHalfSelected.png",
-      [IMG_HALF_CASTED] = RES_ROOT //
-      "/Image/Encounter/Spell/KreigerHalfCasted.png",
-      [IMG_NOTSELECTABLE] = RES_ROOT //
-      "/Image/Encounter/Spell/KreigerDisabled.png",
+      [IMG_NOTSELECTED] = "Kreiger",
+      [IMG_SELECTED] = "KreigerSelected",
+      [IMG_CASTED] = "KreigerCasted",
+      [IMG_HALF_NOTSELECTED] = "KreigerHalf",
+      [IMG_HALF_SELECTED] = "KreigerHalfSelected",
+      [IMG_HALF_CASTED] = "KreigerHalfCasted",
+      [IMG_NOTSELECTABLE] = "KreigerDisabled",
     };
 
     InitSpell(Spell::Warrior, KreigerImages, 0, 0);
 
     static const char* KoniImages[] = {
-      [IMG_NOTSELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/Koni.png",
-      [IMG_SELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/KoniSelected.png",
-      [IMG_CASTED] = RES_ROOT //
-      "/Image/Encounter/Spell/KoniCasted.png",
-      [IMG_HALF_NOTSELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/KoniHalf.png",
-      [IMG_HALF_SELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/KoniHalfSelected.png",
-      [IMG_HALF_CASTED] = RES_ROOT //
-      "/Image/Encounter/Spell/KoniHalfCasted.png",
-      [IMG_NOTSELECTABLE] = RES_ROOT //
-      "/Image/Encounter/Spell/KoniDisabled.png",
+      [IMG_NOTSELECTED] = "Koni",
+      [IMG_SELECTED] = "KoniSelected",
+      [IMG_CASTED] = "KoniCasted",
+      [IMG_HALF_NOTSELECTED] = "KoniHalf",
+      [IMG_HALF_SELECTED] = "KoniHalfSelected",
+      [IMG_HALF_CASTED] = "KoniHalfCasted",
+      [IMG_NOTSELECTABLE] = "KoniDisabled",
     };
 
     InitSpell(Spell::Majestic, KoniImages, -500, 0);
 
     static const char* WaldImages[] = {
-      [IMG_NOTSELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/Wald.png",
-      [IMG_SELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/WaldSelected.png",
-      [IMG_CASTED] = RES_ROOT //
-      "/Image/Encounter/Spell/WaldCasted.png",
-      [IMG_HALF_NOTSELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/WaldHalf.png",
-      [IMG_HALF_SELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/WaldHalfSelected.png",
-      [IMG_HALF_CASTED] = RES_ROOT //
-      "/Image/Encounter/Spell/WaldHalfCasted.png",
-      [IMG_NOTSELECTABLE] = RES_ROOT //
-      "/Image/Encounter/Spell/WaldDisabled.png",
+      [IMG_NOTSELECTED] = "Wald",
+      [IMG_SELECTED] = "WaldSelected",
+      [IMG_CASTED] = "WaldCasted",
+      [IMG_HALF_NOTSELECTED] = "WaldHalf",
+      [IMG_HALF_SELECTED] = "WaldHalfSelected",
+      [IMG_HALF_CASTED] = "WaldHalfCasted",
+      [IMG_NOTSELECTABLE] = "WaldDisabled",
     };
 
     InitSpell(Spell::Woodsy, WaldImages, 250, -350);
 
     static const char* WitzImages[] = {
-      [IMG_NOTSELECTED] = RES_ROOT //
-      //
-      "/Image/Encounter/Spell/Witz.png",
-      [IMG_SELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/WitzSelected.png",
-      [IMG_CASTED] = RES_ROOT //
-      "/Image/Encounter/Spell/WitzCasted.png",
-      [IMG_HALF_NOTSELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/WitzHalf.png",
-      [IMG_HALF_SELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/WitzHalfSelected.png",
-      [IMG_HALF_CASTED] = RES_ROOT //
-      "/Image/Encounter/Spell/WitzHalfCasted.png",
-      [IMG_NOTSELECTABLE] = RES_ROOT //
-      "/Image/Encounter/Spell/WitzDisabled.png",
+      [IMG_NOTSELECTED] = "Witz",
+      [IMG_SELECTED] = "WitzSelected",
+      [IMG_CASTED] = "WitzCasted",
+      [IMG_HALF_NOTSELECTED] = "WitzHalf",
+      [IMG_HALF_SELECTED] = "WitzHalfSelected",
+      [IMG_HALF_CASTED] = "WitzHalfCasted",
+      [IMG_NOTSELECTABLE] = "WitzDisabled",
     };
 
     InitSpell(Spell::Trixter, WitzImages, 500, 0);
 
     static const char* SchattenImages[] = {
-      [IMG_NOTSELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/Schatten.png",
-      [IMG_SELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/SchattenSelected.png",
-      [IMG_CASTED] = RES_ROOT //
-      "/Image/Encounter/Spell/SchattenCasted.png",
-      [IMG_HALF_NOTSELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/SchattenHalf.png",
-      [IMG_HALF_SELECTED] = RES_ROOT //
-      "/Image/Encounter/Spell/SchattenHalfSelected.png",
-      [IMG_HALF_CASTED] = RES_ROOT //
-      "/Image/Encounter/Spell/SchattenHalfCasted.png",
-      [IMG_NOTSELECTABLE] = RES_ROOT //
-      "/Image/Encounter/Spell/SchattenDisabled.png",
+      [IMG_NOTSELECTED] = "Schatten",
+      [IMG_SELECTED] = "SchattenSelected",
+      [IMG_CASTED] = "SchattenCasted",
+      [IMG_HALF_NOTSELECTED] = "SchattenHalf",
+      [IMG_HALF_SELECTED] = "SchattenHalfSelected",
+      [IMG_HALF_CASTED] = "SchattenHalfCasted",
+      [IMG_NOTSELECTABLE] = "SchattenDisabled",
     };
 
     InitSpell(Spell::Shadow, SchattenImages, -250, 350);
