@@ -217,7 +217,7 @@ const char* Page_DuelXavier::NextPhase(Spell castSpell)
             if (numPhaseLeft <= 2 && !m_doneAttackPhase[u32(AttackPhase::Warrior)]) {
                 random = u32(AttackPhase::Warrior);
             } else {
-                random = rand() % numPhaseLeft;
+                random = Random(numPhaseLeft);
                 for (u32 i = 0; i < AttackPhaseCount; i++) {
                     random += m_doneAttackPhase[i] ? 1 : 0;
                     if (random == i)

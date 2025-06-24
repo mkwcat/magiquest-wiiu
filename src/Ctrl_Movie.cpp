@@ -155,8 +155,11 @@ void Ctrl_Movie::process()
 
     OSMessage msg = {};
 
-    if ((System::s_instance->GetFrameID() % 2) == 0) {
-        return;
+    // Enforce 29.97 or 30.0 FPS timing wait
+    if (m_frameRateType < 2) {
+        if ((System::s_instance->GetFrameID() % 2) == 0) {
+            return;
+        }
     }
 
     if (!OSPeekMessage(&m_fbOutQueue, &msg)) {
@@ -166,7 +169,8 @@ void Ctrl_Movie::process()
 
     u32 width = msg.args[1] >> 16;
     u32 height = msg.args[1] & 0xFFFF;
-    u32 frameId = msg.args[2];
+    u32 frameId = msg.args[2] >> 8;
+    m_frameRateType = msg.args[2] & 0xFF;
 
     if (m_audio) {
         if (frameId == 0) {
@@ -687,7 +691,18 @@ void Ctrl_Movie::Decoder::H264FrameCallback(H264DecodeOutput* output)
         msg.args[1] |= output->decodeResults[0]->height & 0xFFFF;
     }
 
-    msg.args[2] = obj->m_frameNum - 1;
+    msg.args[2] = (obj->m_frameNum - 1) << 8;
+
+    // 0 = 29.97 fps, 1 = 30 fps, 2 = 59.94, 3 = 60 fps
+    if (obj->m_frameRate < 29.999) {
+        msg.args[2] |= 0;
+    } else if (obj->m_frameRate < 59.0) {
+        msg.args[2] |= 1;
+    } else if (obj->m_frameRate < 59.98) {
+        msg.args[2] |= 2;
+    } else {
+        msg.args[2] |= 3;
+    }
 
     auto ret = OSSendMessage(obj->m_inputRespQueue, &msg, OS_MESSAGE_FLAGS_BLOCKING);
     assert(ret);
@@ -812,7 +827,12 @@ bool Ctrl_Movie::Decoder::DecodeFrame(u8* nv12Fb, u8* rgbaFb, OSMessageQueue* re
         return false;
     }
 
-    m_frameNum++;
+    if (m_frameNum++ == 0) {
+        m_frameRate =
+          double(m_tr->sample_count) /
+          (double((u64(m_mp4.duration_hi) << 32) | m_mp4.duration_lo) / double(m_mp4.timescale));
+        LOG(LogMP4, "Frame rate: %f", m_frameRate);
+    }
 
     h264err = H264DECExecute(m_memory.get(), nv12Fb);
     if ((h264err & 0xFFFFFF00) != H264_ERROR_OK) {

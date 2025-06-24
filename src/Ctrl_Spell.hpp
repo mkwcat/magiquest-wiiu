@@ -118,10 +118,10 @@ public:
      */
     void OnClick(GuiButton* button, const GuiController* controller, GuiTrigger* trigger)
     {
-        if (!m_selectable)
+        if (!m_selectable) {
             return;
+        }
 
-        Select();
         m_onSelectHandler(this);
     }
 
@@ -130,6 +130,10 @@ public:
      */
     void OnReleased(GuiButton* button, const GuiController* controller, GuiTrigger* trigger)
     {
+        if (!m_selectable) {
+            return;
+        }
+
         m_onReleaseHandler(this);
     }
 

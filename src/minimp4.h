@@ -44,7 +44,7 @@ extern "C" {
 #define MP4D_TRACE_TIMESTAMPS     1
 // Support parsing of supplementary information, not necessary for decoding:
 // duration, language, bitrate, metadata tags, etc
-#define MP4D_INFO_SUPPORTED       0
+#define MP4D_INFO_SUPPORTED       1
 
 // Enable code, which prints to stdout supplementary MP4 information:
 #define MP4D_PRINT_INFO_SUPPORTED 0

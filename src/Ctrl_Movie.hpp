@@ -110,6 +110,7 @@ private:
     DecoderThread m_audioThread{1, 0};
 
     bool m_audio = false;
+    u8 m_frameRateType = 0;
     u32 m_maxWidth = 0;
     u32 m_maxHeight = 0;
 
@@ -255,6 +256,7 @@ private:
         MP4D_track_t* m_tr = nullptr;
         u32 m_sample = 0;
         u32 m_frameNum = 0;
+        double m_frameRate = 60.0;
         std::unique_ptr<u8[]> m_sampleData;
 
         static constexpr int MaxCacheSize = 4096 * 2;

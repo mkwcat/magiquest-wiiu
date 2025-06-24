@@ -417,11 +417,6 @@ int main(int argc, char** argv)
     // Create the audio manager
     new AXManager();
 
-    // Initialize random state
-    srand(OSGetSystemTime());
-    rand();
-    rand();
-
     // Scoped System
     {
         System sys;

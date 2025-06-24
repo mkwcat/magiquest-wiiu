@@ -6,6 +6,7 @@
 #pragma once
 
 #include <coreinit/mutex.h>
+#include <coreinit/time.h>
 #include <gctypes.h>
 #include <stdlib.h>
 
@@ -27,22 +28,21 @@ enum LogSource {
 
 #  define _STRIFY(line) #line
 
-#  define _DO_PRINT(file, line, ...)                                           \
-    WHBLogPrintf(file ":" _STRIFY(line) " > " __VA_ARGS__)
+#  define _DO_PRINT(file, line, ...) WHBLogPrintf(file ":" _STRIFY(line) " > " __VA_ARGS__)
 
-#  define LOG(source, ...)                                                     \
-    if (CONF_LOG_MASK & source)                                                \
-    _DO_PRINT(__FILE__, __LINE__, __VA_ARGS__)
+#  define LOG(source, ...)                                                                         \
+      if (CONF_LOG_MASK & source)                                                                  \
+      _DO_PRINT(__FILE__, __LINE__, __VA_ARGS__)
 
-#  define LOG_VERBOSE(source, ...)                                             \
-    if (CONF_LOG_VERBOSE && (CONF_LOG_MASK & source))                          \
-    _DO_PRINT(__FILE__, __LINE__, __VA_ARGS__)
+#  define LOG_VERBOSE(source, ...)                                                                 \
+      if (CONF_LOG_VERBOSE && (CONF_LOG_MASK & source))                                            \
+      _DO_PRINT(__FILE__, __LINE__, __VA_ARGS__)
 
-#  define PANIC(...)                                                           \
-    do {                                                                       \
-      _DO_PRINT(__FILE__, __LINE__, __VA_ARGS__);                              \
-      abort();                                                                 \
-    } while (0)
+#  define PANIC(...)                                                                               \
+      do {                                                                                         \
+          _DO_PRINT(__FILE__, __LINE__, __VA_ARGS__);                                              \
+          abort();                                                                                 \
+      } while (0)
 
 #else // LOG_MASK != 0
 #  define LOG(source, ...)
@@ -95,3 +95,10 @@ public:
         OSUnlockMutex(m_mutex);
     }
 };
+
+inline u32 Random(u32 max)
+{
+    static u64 state = OSGetTime();
+    state = u64(state) * 1664525 + 1013904223;
+    return u32(state % max);
+}
