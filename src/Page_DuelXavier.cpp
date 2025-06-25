@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "Page_DuelXavier.hpp"
+#include "Ctrl_Mana.hpp"
 #include "Page_Background.hpp"
-#include "Page_Movie.hpp"
 #include <cstdlib>
 
 enum {
@@ -47,22 +47,6 @@ void Page_DuelXavier::InitSpell(Spell spell, const char** images, int posX, int 
 
 void Page_DuelXavier::Init()
 {
-    m_imgManaLeft.Update(Ctrl_Mana::Left, 0);
-    m_imgManaRight.Update(Ctrl_Mana::Right, 0);
-
-    m_imgManaLeft.setPosition(-(1920 / 2) + 40, -(1080 / 2) + 35);
-    m_imgManaLeft.setAlignment(ALIGN_LEFT | ALIGN_BOTTOM);
-    m_imgManaLeft.setScaleX((1080 / m_imgManaLeft.getHeight()) * 0.85);
-    m_imgManaLeft.setScaleY((1080 / m_imgManaLeft.getHeight()) * 0.85);
-
-    m_imgManaRight.setPosition((1920 / 2) - 40, -(1080 / 2) + 35);
-    m_imgManaRight.setAlignment(ALIGN_RIGHT | ALIGN_BOTTOM);
-    m_imgManaRight.setScaleX((1080 / m_imgManaRight.getHeight()) * 0.85);
-    m_imgManaRight.setScaleY((1080 / m_imgManaRight.getHeight()) * 0.85);
-
-    append(&m_imgManaLeft);
-    append(&m_imgManaRight);
-
     static const char* KreigerImages[] = {
       [IMG_NOTSELECTED] = "Kreiger",
       [IMG_SELECTED] = "KreigerSelected",
@@ -131,20 +115,15 @@ void Page_DuelXavier::process()
         m_initialized = true;
     }
 
-    m_imgManaLeft.Update(Ctrl_Mana::Left, GetMana(Ctrl_Mana::Left));
-    m_imgManaRight.Update(Ctrl_Mana::Right, GetMana(Ctrl_Mana::Right));
-
     GuiFrame::process();
 }
 
 void Page_DuelXavier::Transition()
 {
-    auto movie = System::GetPageStatic<Page_Movie>();
-    assert(movie != nullptr);
-
-    movie->SetEncounter(this);
-
-    System::GetPageStatic<Page_Background>()->SetImage(Page_Background::ImageType::TouchDuelXavier);
+    m_currentPhase = Phase::Idle;
+    m_nextPhase = Phase::MagiWin;
+    m_isInputPhase = false;
+    ForceNextMovie();
 }
 
 const char* Page_DuelXavier::NextPhase(Spell castSpell)
@@ -422,27 +401,6 @@ void Page_DuelXavier::Cast(
 {
     LOG(LogSystem, "Cast");
 
-    // Ignore if this page is not visible.
-    if (!System::s_instance->GetSetting(System::GetPageID(this))->drc) {
-        return;
-    }
-
-    if (castMode == Wand::CastMode::WiiRemoteCastRune && curValid && m_isInputPhase &&
-        (curX < 640 && curX > -640 && curY < 450 && curY > -450)) {
-        for (u32 i = 0; i < SpellCount; i++) {
-            if (!m_buttons[i].IsSelectable())
-                continue;
-
-            auto x = m_buttons[i].getCenterX();
-            auto y = m_buttons[i].getCenterY();
-            if (curX > x - 240 && curX < x + 240 && curY > y - 240 && curY < y + 240) {
-                DeselectAll();
-                m_buttons[i].Select();
-            }
-        }
-        return;
-    }
-
     if (m_currentPhase == Phase::Idle || m_currentPhase == Phase::MagiWin) {
         m_nextPhase = Phase::Start;
         ForceNextMovie();
@@ -452,6 +410,23 @@ void Page_DuelXavier::Cast(
     if (m_currentPhase == Phase::MagiLose) {
         m_nextPhase = Phase::Restart;
         ForceNextMovie();
+        return;
+    }
+
+    if (castMode == Wand::CastMode::WiiRemoteCastRune && curValid && m_isInputPhase &&
+        (curX < 640 && curX > -640 && curY < 450 && curY > -450)) {
+        for (u32 i = 0; i < SpellCount; i++) {
+            if (!m_buttons[i].IsSelectable()) {
+                continue;
+            }
+
+            auto x = m_buttons[i].getCenterX();
+            auto y = m_buttons[i].getCenterY();
+            if (curX > x - 240 && curX < x + 240 && curY > y - 240 && curY < y + 240) {
+                DeselectAll();
+                m_buttons[i].Select();
+            }
+        }
         return;
     }
 

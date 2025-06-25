@@ -9,6 +9,8 @@
 -I/opt/devkitpro/libogc/include
 -I/opt/devkitpro/portlibs/ppc/include
 -I../vendor/libgui/include
+-I../vendor/libopus/include
+-I../vendor/opusfile/include
 -I.
 -nobuiltininc
 -nostdinc

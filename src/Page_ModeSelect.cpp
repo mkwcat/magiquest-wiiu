@@ -4,10 +4,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "Page_ModeSelect.hpp"
-#include "Encounter.hpp"
-#include "Page_Background.hpp"
-#include "Page_CastModeConfirm.hpp"
-#include "Page_Movie.hpp"
+#include "Page_CastTutorial.hpp"
+#include "Page_TouchDuel.hpp"
 
 Page_ModeSelect::Page_ModeSelect()
   : m_btnTouchDuel(520, 200)
@@ -61,11 +59,11 @@ void Page_ModeSelect::OnSelectTouchDuel(
 {
     LOG(LogSystem, "Select Touch Duel");
 
-    System::s_instance->GetWand()->SetCastMode(Wand::CastMode::WiiRemoteTouchRune);
+    sys()->GetWand()->SetCastMode(Wand::CastMode::WiiRemoteTouchRune);
 
-    System::s_instance->HidePage(System::GetPageID(this), System::Display::All);
-    System::s_instance->ShowPage(System::GetPageID<Encounter>(), System::Display::DRC);
-    System::GetPageStatic<Encounter>()->Transition();
+    sys()->HidePage(System::GetPageID(this), System::Display::All);
+    System::GetPageStatic<Page_TouchDuel>()->Transition();
+    sys()->ShowPage(System::GetPageID<Page_TouchDuel>(), System::Display::DRC);
 }
 
 void Page_ModeSelect::OnSelectCastDuel(
@@ -73,10 +71,10 @@ void Page_ModeSelect::OnSelectCastDuel(
 {
     LOG(LogSystem, "Select Cast Duel");
 
-    System::s_instance->GetWand()->SetCastMode(Wand::CastMode::WiiRemoteCastRune);
+    sys()->GetWand()->SetCastMode(Wand::CastMode::WiiRemoteCastRune);
 
-    System::s_instance->HidePage(System::GetPageID(this), System::Display::All);
-    System::s_instance->ShowPage(System::GetPageID<Page_CastModeConfirm>(), System::Display::DRC);
+    sys()->HidePage(System::GetPageID(this), System::Display::All);
+    sys()->ShowPage(System::GetPageID<Page_CastTutorial>(), System::Display::DRC);
 }
 
 void Page_ModeSelect::OnSelectRealWand(
@@ -84,10 +82,9 @@ void Page_ModeSelect::OnSelectRealWand(
 {
     LOG(LogSystem, "Select Real Wand");
 
-    System::s_instance->GetWand()->SetCastMode(Wand::CastMode::RealWand);
+    sys()->GetWand()->SetCastMode(Wand::CastMode::RealWand);
 
-    System::s_instance->HidePage(System::GetPageID(this), System::Display::All);
-    System::s_instance->HidePage(System::GetPageID<Page_Background>(), System::Display::All);
-    System::s_instance->ShowPage(System::GetPageID<Encounter>(), System::Display::DRC);
-    System::GetPageStatic<Encounter>()->Transition();
+    sys()->HidePage(System::GetPageID(this), System::Display::All);
+    System::GetPageStatic<Page_TouchDuel>()->Transition();
+    sys()->ShowPage(System::GetPageID<Page_TouchDuel>(), System::Display::DRC);
 }

@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "Encounter.hpp"
-#include "Page_Movie.hpp"
+#include "Page_Projector.hpp"
 #include "System.hpp"
 
 Encounter::Encounter()
@@ -30,7 +30,7 @@ u8 Encounter::GetMana(u8 side)
 
 void Encounter::SetMana(u8 side, u8 value)
 {
-    auto page = System::GetPageStatic<Page_Movie>();
+    auto page = System::GetPageStatic<Page_Projector>();
     assert(page != nullptr);
 
     page->ManaUpdate(side, value);
@@ -50,7 +50,7 @@ void Encounter::SetMana(u8 side, u8 value)
 
 void Encounter::ForceNextMovie()
 {
-    auto page = System::GetPageStatic<Page_Movie>();
+    auto page = System::GetPageStatic<Page_Projector>();
     assert(page != nullptr);
 
     page->EndMovie();

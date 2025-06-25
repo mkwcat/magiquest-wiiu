@@ -23,16 +23,16 @@ private:
 public:
     void process()
     {
+        GuiFrame::process();
+
         if (m_initialized) {
             return;
         }
 
+        LoadImage(m_statusStationImage, RES_ROOT "/Image/Background/GameStation.jpg");
+        LoadImage(m_touchDuelXavierImage, RES_ROOT "/Image/Background/TouchduelXavier.jpg");
         LoadImage(
-          m_statusStationImage, RES_ROOT "/Image/Background/GameStation.jpg");
-        LoadImage(m_touchDuelXavierImage,
-          RES_ROOT "/Image/Background/TouchduelXavier.jpg");
-        LoadImage(m_touchDuelBlizzardDawnImage,
-          RES_ROOT "/Image/Background/TouchduelBlizzardDawn.jpg");
+          m_touchDuelBlizzardDawnImage, RES_ROOT "/Image/Background/TouchduelBlizzardDawn.jpg");
 
         SetImage(ImageType::StatusStation);
 
@@ -49,8 +49,9 @@ public:
     {
         m_statusStationImage.setVisible(type == ImageType::StatusStation);
         m_touchDuelXavierImage.setVisible(type == ImageType::TouchDuelXavier);
-        m_touchDuelBlizzardDawnImage.setVisible(
-          type == ImageType::TouchDuelBlizzardDawn);
+        m_touchDuelBlizzardDawnImage.setVisible(type == ImageType::TouchDuelBlizzardDawn);
+
+        GuiFrame::process();
     }
 
 private:

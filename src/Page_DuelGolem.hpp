@@ -5,10 +5,8 @@
 
 #pragma once
 
-#include "Ctrl_Mana.hpp"
 #include "Ctrl_Spell.hpp"
 #include "Encounter.hpp"
-#include "Page_Background.hpp"
 #include "System.hpp"
 #include <gui/GuiButton.h>
 #include <gui/GuiFrame.h>
@@ -75,8 +73,16 @@ public:
     /**
      * Cast from WandHandler.
      */
-    virtual void Cast(Wand::CastMode castMode, bool curValid, float curX,
-      float curY, float curZ) override;
+    virtual void Cast(
+      Wand::CastMode castMode, bool curValid, float curX, float curY, float curZ) override;
+
+    /**
+     * UIVisible from Encounter.
+     */
+    bool UIVisible() const override
+    {
+        return m_currentPhase != Phase::Idle && m_currentPhase != Phase::End;
+    }
 
 protected:
     /**
@@ -90,9 +96,6 @@ protected:
     Phase m_nextPhase;
     char m_phaseMoviePath[128];
     bool m_isInputPhase;
-
-    Ctrl_Mana m_manaLeft;
-    Ctrl_Mana m_manaRight;
 
     bool m_started;
 };

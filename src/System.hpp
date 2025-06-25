@@ -43,6 +43,7 @@ public:
         DRC = 0,
         TV = 1,
         All = 2,
+        None = 3,
     };
 
     struct PageSetting {
@@ -146,6 +147,18 @@ public:
     }
 
     /**
+     * Get the display setting for the specified page.
+     */
+    Display GetDisplay(PageID page) const
+    {
+        const PageSetting* set = &m_pages[u32(page)];
+        if (set->tv) {
+            return set->drc ? Display::All : Display::TV;
+        }
+        return set->drc ? Display::DRC : Display::None;
+    }
+
+    /**
      * Get the file access mutex.
      */
     OSMutex& FileMutex()
@@ -193,8 +206,8 @@ protected:
 
     OSMutex m_fileMutex = {};
 
-    PageSetting m_pages[PageCount];
-    PageSetting m_nextSetting[PageCount];
+    std::array<PageSetting, PageCount> m_pages;
+    std::array<PageSetting, PageCount> m_nextSetting;
 
     u32 m_frameId = 0;
 };

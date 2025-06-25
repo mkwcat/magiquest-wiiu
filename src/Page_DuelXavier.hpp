@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include "Ctrl_Mana.hpp"
 #include "Ctrl_Spell.hpp"
 #include "Encounter.hpp"
 #include "System.hpp"
@@ -89,8 +88,25 @@ public:
     /**
      * Cast from WandHandler.
      */
-    virtual void Cast(Wand::CastMode castMode, bool curValid, float curX,
-      float curY, float curZ) override;
+    virtual void Cast(
+      Wand::CastMode castMode, bool curValid, float curX, float curY, float curZ) override;
+
+    /**
+     * UIVisible from Encounter.
+     */
+    bool UIVisible() const override
+    {
+        return m_currentPhase != Phase::Idle && m_currentPhase != Phase::MagiWin &&
+               m_currentPhase != Phase::MagiLose && m_currentPhase != Phase::End;
+    }
+
+    /**
+     * GetBackgroundType from Encounter.
+     */
+    Page_Background::ImageType GetBackgroundType() const override
+    {
+        return Page_Background::ImageType::TouchDuelXavier;
+    }
 
 protected:
     /**
@@ -105,9 +121,6 @@ protected:
     AttackPhase m_attackPhase;
     char m_phaseMoviePath[128];
     bool m_isInputPhase = false;
-
-    Ctrl_Mana m_imgManaLeft;
-    Ctrl_Mana m_imgManaRight;
 
     bool m_started = false;
 };

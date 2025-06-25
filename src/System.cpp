@@ -25,12 +25,11 @@
 #endif
 
 #include "Page_Background.hpp"
-#include "Page_CastModeConfirm.hpp"
-#include "Page_DuelGolem.hpp"
-#include "Page_DuelXavier.hpp"
-#include "Page_EncounterSelect.hpp"
+#include "Page_CastTutorial.hpp"
+#include "Page_SelectAdventure.hpp"
 #include "Page_ModeSelect.hpp"
-#include "Page_Movie.hpp"
+#include "Page_Projector.hpp"
+#include "Page_TouchDuel.hpp"
 
 System* System::s_instance = nullptr;
 
@@ -39,44 +38,10 @@ System::System()
   , m_video(new CVideo(GX2_TV_SCAN_MODE_1080P))
   , m_gamepad(GuiTrigger::CHANNEL_1)
   , m_imgCursor(nullptr)
-  , m_pages{
-      {
-        .id = PageID::Movie,
-        .tv = false,
-        .drc = false,
-        .element = nullptr,
-      },
-      {
-        .id = PageID::Background,
-        .tv = false,
-        .drc = false,
-        .element = nullptr,
-      },
-      {
-        .id = PageID::EncounterSelect,
-        .tv = false,
-        .drc = false,
-        .element = nullptr,
-      },
-      {
-        .id = PageID::ModeSelect,
-        .tv = false,
-        .drc = false,
-        .element = nullptr,
-      },
-      {
-        .id = PageID::CastModeConfirm,
-        .tv = false,
-        .drc = false,
-        .element = nullptr,
-      },
-      {
-        .id = PageID::TouchDuel,
-        .tv = false,
-        .drc = false,
-        .element = nullptr,
-      },
-    }
+  , m_pages{// aggregate initialization of std::array
+      PageSetting{PageID::Movie}, PageSetting{PageID::Background},
+      PageSetting{PageID::EncounterSelect}, PageSetting{PageID::ModeSelect},
+      PageSetting{PageID::CastModeConfirm}, PageSetting{PageID::TouchDuel}}
 {
     if (s_instance == nullptr) {
         s_instance = this;
@@ -92,11 +57,12 @@ System::System()
     ResourceManager::Init();
 
     // Construct page objects
-    m_pages[u32(PageID::Movie)].element = new Page_Movie();
+    m_pages[u32(PageID::Movie)].element = new Page_Projector();
     m_pages[u32(PageID::Background)].element = new Page_Background();
-    m_pages[u32(PageID::EncounterSelect)].element = new Page_EncounterSelect();
+    m_pages[u32(PageID::EncounterSelect)].element = new Page_SelectAdventure();
     m_pages[u32(PageID::ModeSelect)].element = new Page_ModeSelect();
-    m_pages[u32(PageID::CastModeConfirm)].element = new Page_CastModeConfirm();
+    m_pages[u32(PageID::CastModeConfirm)].element = new Page_CastTutorial();
+    m_pages[u32(PageID::TouchDuel)].element = new Page_TouchDuel();
 
     m_imgCursorTimer = 0;
     m_frameId = 0;
@@ -263,6 +229,9 @@ void System::ShowPage(PageID page, Display display)
         set->tv = true;
         set->drc = true;
         break;
+
+    default:
+        break;
     }
 }
 
@@ -286,6 +255,9 @@ void System::HidePage(PageID page, Display display)
     case Display::All:
         set->tv = false;
         set->drc = false;
+        break;
+
+    default:
         break;
     }
 }
@@ -314,8 +286,9 @@ bool System::Tick()
 
         for (u32 i = 0; i < PageCount; i++) {
             auto handler = dynamic_cast<WandHandler*>(m_pages[i].element);
-            if (handler != nullptr)
+            if (handler != nullptr) {
                 handler->Cast(m_wand->GetCastMode(), curValid, curX, curY, curZ);
+            }
         }
     }
 
@@ -325,7 +298,9 @@ bool System::Tick()
 
     bool update = m_gamepad.update(m_video->getTvWidth(), m_video->getTvHeight());
 
-    for (auto set : m_pages) {
+    std::array<PageSetting, PageCount> sets = m_pages;
+
+    for (auto set : sets) {
         if (set.element == nullptr) {
             continue;
         }
@@ -340,7 +315,7 @@ bool System::Tick()
     m_imgCursor.process();
 
     m_video->prepareDrcRendering();
-    for (auto set : m_pages) {
+    for (auto set : sets) {
         if (set.element == nullptr) {
             continue;
         }
@@ -357,8 +332,10 @@ bool System::Tick()
     }
     m_video->drcDrawDone();
 
+    sets = m_pages;
+
     m_video->prepareTvRendering();
-    for (auto set : m_pages) {
+    for (auto set : sets) {
         if (set.element == nullptr) {
             continue;
         }

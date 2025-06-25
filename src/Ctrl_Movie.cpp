@@ -318,7 +318,7 @@ void Ctrl_Movie::VideoYUV2RGBProc()
         assert(ret);
 
         if (m_onFrameHandler != nullptr) {
-            m_onFrameHandler(this, sample);
+            m_onFrameHandler(this, sample >> 8);
         }
     }
 }

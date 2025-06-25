@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include "Ctrl_Mana.hpp"
 #include "Ctrl_Spell.hpp"
 #include "Encounter.hpp"
 #include "System.hpp"
@@ -29,11 +28,11 @@ class Page_DuelDragon : public GuiFrame, public Encounter
         Ready,
         Start,
         Attack,
-        Retreat,
+        Tailsweep,
         FreezeFail,
         Freeze,
         AttackFail,
-        FailRetreat,
+        FailTailsweep,
         End,
     };
 
@@ -53,13 +52,19 @@ public:
     void Transition() override;
 
 private:
-    const char* NextPhase(Spell castSpell);
+    const char* NextPhase();
+    void NextInput();
 
 public:
     /**
      * NextMovie from Encounter.
      */
     virtual const char* NextMovie() override;
+
+    /**
+     * NextFrame from Encounter.
+     */
+    virtual void NextFrame(u32 frame) override;
 
     /**
      * Cast from WandHandler.
@@ -69,15 +74,26 @@ public:
 
     static std::array<int, 10> GetDamageTable(bool protection, bool dragonWand)
     {
+        // Based on DragonEncounter2.SetMagMaPole (and corroborated with testing). If the index
+        // overflows then the value should be 0.
         if (!protection) {
-            return {8, 8, 8, 8, 8, 8};
+            return {8, 8, 8, 8, 8, 8, 8, 8, 8, 0};
         }
 
         if (dragonWand) {
-            return {0, 2, 2, 2, 2, 2, 2, 2, 2};
+            return {0, 2, 2, 2, 2, 2, 2, 2, 2, 0};
         }
 
-        return {2, 2, 4, 6, 8, 10};
+        return {2, 2, 4, 6, 2, 2, 2, 2, 2, 0};
+    }
+
+    /**
+     * UIVisible from Encounter.
+     */
+    bool UIVisible() const override
+    {
+        return m_nextPhase != Phase::Idle &&
+               (m_currentPhase != Phase::Idle || m_nextPhase != Phase::End);
     }
 
 private:
@@ -87,21 +103,21 @@ private:
     void DeselectAll();
 
     Ctrl_Spell m_buttons[SpellCount];
-    int m_buttonUses[SpellCount] = {};
-    Spell m_castSpell = Spell::None;
     int m_dragonHitCount = 0;
+
+    bool m_castProtection = false;
+    bool m_castFreeze = false;
+    bool m_castIceArrow = false;
+    bool m_allowProtection = false;
+    bool m_allowFreeze = false;
+    bool m_allowIceArrow = false;
+
+    // i.e iFireballThrown, value will overflow
     int m_magiHitCount = 0;
-    bool m_repeatCycle = false;
 
     bool m_initialized = false;
 
     Phase m_currentPhase = Phase::Idle;
     Phase m_nextPhase = Phase::Idle;
     char m_phaseMoviePath[128];
-    bool m_isInputPhase = false;
-
-    Ctrl_Mana m_manaLeft;
-    Ctrl_Mana m_manaRight;
-
-    bool m_started = false;
 };

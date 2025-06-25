@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "Wand.hpp"
+#include "Page_Background.hpp"
 #include "WandHandler.hpp"
 #include <coreinit/mutex.h>
 #include <gctypes.h>
@@ -34,6 +34,21 @@ public:
      */
     virtual void Transition()
     {
+    }
+
+    virtual bool UIVisible() const
+    {
+        return true;
+    }
+
+    virtual bool BackButtonAllowed() const
+    {
+        return !UIVisible();
+    }
+
+    virtual Page_Background::ImageType GetBackgroundType() const
+    {
+        return Page_Background::ImageType::TouchDuelBlizzardDawn;
     }
 
 private:

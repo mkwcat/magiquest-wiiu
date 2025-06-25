@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "Page_DuelGolem.hpp"
-#include "Page_Movie.hpp"
+#include "Page_Background.hpp"
 #include <cstdlib>
 
 Page_DuelGolem::Page_DuelGolem()
@@ -53,22 +53,6 @@ void Page_DuelGolem::InitSpell(Spell spell, const char** images, int posX, int p
 
 void Page_DuelGolem::Init()
 {
-    m_manaLeft.Update(Ctrl_Mana::Left, 0);
-    m_manaRight.Update(Ctrl_Mana::Right, 0);
-
-    m_manaLeft.setPosition(-(1920 / 2) + 40, -(1080 / 2) + 35);
-    m_manaLeft.setAlignment(ALIGN_LEFT | ALIGN_BOTTOM);
-    m_manaLeft.setScaleX((1080 / m_manaLeft.getHeight()) * 0.85);
-    m_manaLeft.setScaleY((1080 / m_manaLeft.getHeight()) * 0.85);
-
-    m_manaRight.setPosition((1920 / 2) - 40, -(1080 / 2) + 35);
-    m_manaRight.setAlignment(ALIGN_RIGHT | ALIGN_BOTTOM);
-    m_manaRight.setScaleX((1080 / m_manaRight.getHeight()) * 0.85);
-    m_manaRight.setScaleY((1080 / m_manaRight.getHeight()) * 0.85);
-
-    append(&m_manaLeft);
-    append(&m_manaRight);
-
     static const char* MagmaImages[] = {
       [IMG_NOTSELECTED] = "Magma",
       [IMG_SELECTED] = "MagmaSelected",
@@ -105,24 +89,14 @@ void Page_DuelGolem::process()
         m_initialized = true;
     }
 
-    auto page = System::GetPageStatic<Page_Movie>();
-    assert(page != nullptr);
-
-    m_manaLeft.Update(Ctrl_Mana::Left, GetMana(Ctrl_Mana::Left));
-    m_manaRight.Update(Ctrl_Mana::Right, GetMana(Ctrl_Mana::Right));
-
     GuiFrame::process();
 }
 
 void Page_DuelGolem::Transition()
 {
-    auto movie = System::GetPageStatic<Page_Movie>();
-    assert(movie != nullptr);
-
-    movie->SetEncounter(this);
-
-    System::GetPageStatic<Page_Background>()->SetImage(
-      Page_Background::ImageType::TouchDuelBlizzardDawn);
+    m_nextPhase = Phase::End;
+    m_isInputPhase = false;
+    ForceNextMovie();
 }
 
 const char* Page_DuelGolem::NextPhase(Spell castSpell)
@@ -332,8 +306,8 @@ const char* Page_DuelGolem::NextMovie()
     auto name = NextPhase(castSpell);
 
     if (name == nullptr) {
-        // Default to the Xavier idle screen
-        strcpy(m_phaseMoviePath, RES_ROOT "/Movie/Xavier/XavierIdle.mp4");
+        // Default to the web portal idle screen
+        strcpy(m_phaseMoviePath, RES_ROOT "/Movie/SilverDragon/InternetPortalwTextandGameplay.mp4");
     } else {
         snprintf(m_phaseMoviePath, sizeof(m_phaseMoviePath), RES_ROOT "/Movie/Golem/%s.mp4", name);
     }
@@ -352,16 +326,18 @@ void Page_DuelGolem::Cast(
 {
     LOG(LogSystem, "Cast");
 
-    // Ignore if this page is not visible.
-    if (!System::s_instance->GetSetting(System::GetPageID(this))->drc) {
+    if (m_currentPhase == Phase::Idle || m_currentPhase == Phase::End) {
+        m_nextPhase = Phase::Start;
+        ForceNextMovie();
         return;
     }
 
     if (castMode == Wand::CastMode::WiiRemoteCastRune && curValid && m_isInputPhase &&
         (curX < 640 && curX > -640 && curY < 450 && curY > -450)) {
         for (u32 i = 0; i < SpellCount; i++) {
-            if (!m_buttons[i].IsSelectable())
+            if (!m_buttons[i].IsSelectable()) {
                 continue;
+            }
 
             auto x = m_buttons[i].getCenterX();
             auto y = m_buttons[i].getCenterY();
@@ -370,12 +346,6 @@ void Page_DuelGolem::Cast(
                 m_buttons[i].Select();
             }
         }
-        return;
-    }
-
-    if (m_currentPhase == Phase::Idle || m_currentPhase == Phase::End) {
-        m_nextPhase = Phase::Start;
-        ForceNextMovie();
         return;
     }
 

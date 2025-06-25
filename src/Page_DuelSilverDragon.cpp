@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "Page_DuelSilverDragon.hpp"
-#include "Page_DuelGolem.hpp"
-#include "Page_Movie.hpp"
+#include "Page_Background.hpp"
 #include <cstdlib>
 
 enum {
@@ -49,22 +48,6 @@ void Page_DuelSilverDragon::InitSpell(
 
 void Page_DuelSilverDragon::Init()
 {
-    m_manaLeft.Update(Ctrl_Mana::Left, 0);
-    m_manaRight.Update(Ctrl_Mana::Right, 0);
-
-    m_manaLeft.setPosition(-(1920 / 2) + 40, -(1080 / 2) + 35);
-    m_manaLeft.setAlignment(ALIGN_LEFT | ALIGN_BOTTOM);
-    m_manaLeft.setScaleX((1080 / m_manaLeft.getHeight()) * 0.85);
-    m_manaLeft.setScaleY((1080 / m_manaLeft.getHeight()) * 0.85);
-
-    m_manaRight.setPosition((1920 / 2) - 40, -(1080 / 2) + 35);
-    m_manaRight.setAlignment(ALIGN_RIGHT | ALIGN_BOTTOM);
-    m_manaRight.setScaleX((1080 / m_manaRight.getHeight()) * 0.85);
-    m_manaRight.setScaleY((1080 / m_manaRight.getHeight()) * 0.85);
-
-    append(&m_manaLeft);
-    append(&m_manaRight);
-
     using StringArray = const char* const[];
 
     InitSpell(Spell::Blue,
@@ -131,27 +114,14 @@ void Page_DuelSilverDragon::process()
         m_initialized = true;
     }
 
-    auto page = System::GetPageStatic<Page_Movie>();
-    assert(page != nullptr);
-
-    m_manaLeft.Update(Ctrl_Mana::Left, GetMana(Ctrl_Mana::Left));
-    m_manaRight.Update(Ctrl_Mana::Right, GetMana(Ctrl_Mana::Right));
-
     GuiFrame::process();
 }
 
 void Page_DuelSilverDragon::Transition()
 {
-    auto movie = System::GetPageStatic<Page_Movie>();
-    assert(movie != nullptr);
-
-    movie->SetEncounter(this);
     m_nextPhase = Phase::End;
     m_isInputPhase = false;
     ForceNextMovie();
-
-    System::GetPageStatic<Page_Background>()->SetImage(
-      Page_Background::ImageType::TouchDuelBlizzardDawn);
 }
 
 const char* Page_DuelSilverDragon::NextPhase()
@@ -323,8 +293,8 @@ const char* Page_DuelSilverDragon::NextMovie()
     auto name = NextPhase();
 
     if (name == nullptr) {
-        // Default to the Dragon idle screen
-        strcpy(m_phaseMoviePath, RES_ROOT "/Movie/Dragon/Dragon0001.mp4");
+        // Default to the web portal idle screen
+        strcpy(m_phaseMoviePath, RES_ROOT "/Movie/SilverDragon/InternetPortalwTextandGameplay.mp4");
     } else {
         snprintf(
           m_phaseMoviePath, sizeof(m_phaseMoviePath), RES_ROOT "/Movie/SilverDragon/%s.mp4", name);
@@ -346,8 +316,9 @@ void Page_DuelSilverDragon::Cast(
 {
     LOG(LogSystem, "Cast");
 
-    // Ignore if this page is not visible.
-    if (!System::s_instance->GetSetting(System::GetPageID(this))->drc) {
+    if (m_currentPhase == Phase::Idle || m_currentPhase == Phase::End) {
+        m_nextPhase = Phase::Start;
+        ForceNextMovie();
         return;
     }
 
@@ -368,12 +339,6 @@ void Page_DuelSilverDragon::Cast(
                 }
             }
         }
-        return;
-    }
-
-    if (m_currentPhase == Phase::Idle || m_currentPhase == Phase::End) {
-        m_nextPhase = Phase::Start;
-        ForceNextMovie();
         return;
     }
 

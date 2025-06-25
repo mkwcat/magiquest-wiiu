@@ -263,7 +263,7 @@ private:
 
         u32 m_cacheOffset = 0;
         u32 m_cacheSize = 0;
-        u8 m_cache[MaxCacheSize] alignas(32) = {};
+        alignas(32) u8 m_cache[MaxCacheSize] = {};
         u32 m_seekOffset = 0;
 
         std::unique_ptr<u8[]> m_memory;

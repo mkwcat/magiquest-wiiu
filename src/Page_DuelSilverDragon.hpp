@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include "Ctrl_Mana.hpp"
 #include "Ctrl_Spell.hpp"
 #include "Encounter.hpp"
 #include "System.hpp"
@@ -68,6 +67,23 @@ public:
     virtual void Cast(
       Wand::CastMode castMode, bool curValid, float curX, float curY, float curZ) override;
 
+    /**
+     * UIVisible from Encounter.
+     */
+    bool UIVisible() const override
+    {
+        return m_currentPhase != Phase::Idle && m_currentPhase != Phase::End &&
+               m_currentPhase != Phase::Start;
+    }
+
+    /**
+     * BackButtonAllowed from Encounter.
+     */
+    bool BackButtonAllowed() const override
+    {
+        return m_currentPhase == Phase::Idle || m_currentPhase == Phase::End;
+    }
+
 private:
     /**
      * Deselect all spells.
@@ -89,9 +105,6 @@ private:
     Phase m_nextPhase = Phase::Idle;
     char m_phaseMoviePath[128];
     bool m_isInputPhase = false;
-
-    Ctrl_Mana m_manaLeft;
-    Ctrl_Mana m_manaRight;
 
     bool m_started = false;
 };
