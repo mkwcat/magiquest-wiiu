@@ -26,9 +26,10 @@
 
 #include "Page_Background.hpp"
 #include "Page_CastTutorial.hpp"
-#include "Page_SelectAdventure.hpp"
 #include "Page_ModeSelect.hpp"
 #include "Page_Projector.hpp"
+#include "Page_SelectAdventure.hpp"
+#include "Page_SelectAdventureCategory.hpp"
 #include "Page_TouchDuel.hpp"
 
 System* System::s_instance = nullptr;
@@ -39,9 +40,8 @@ System::System()
   , m_gamepad(GuiTrigger::CHANNEL_1)
   , m_imgCursor(nullptr)
   , m_pages{// aggregate initialization of std::array
-      PageSetting{PageID::Movie}, PageSetting{PageID::Background},
-      PageSetting{PageID::EncounterSelect}, PageSetting{PageID::ModeSelect},
-      PageSetting{PageID::CastModeConfirm}, PageSetting{PageID::TouchDuel}}
+      PageSetting{PageID::Movie}, {PageID::Background}, {PageID::SelectAdventureCategory},
+      {PageID::SelectAdventure}, {PageID::ModeSelect}, {PageID::CastTutorial}, {PageID::TouchDuel}}
 {
     if (s_instance == nullptr) {
         s_instance = this;
@@ -59,9 +59,10 @@ System::System()
     // Construct page objects
     m_pages[u32(PageID::Movie)].element = new Page_Projector();
     m_pages[u32(PageID::Background)].element = new Page_Background();
-    m_pages[u32(PageID::EncounterSelect)].element = new Page_SelectAdventure();
+    m_pages[u32(PageID::SelectAdventureCategory)].element = new Page_SelectAdventureCategory();
+    m_pages[u32(PageID::SelectAdventure)].element = new Page_SelectAdventure();
     m_pages[u32(PageID::ModeSelect)].element = new Page_ModeSelect();
-    m_pages[u32(PageID::CastModeConfirm)].element = new Page_CastTutorial();
+    m_pages[u32(PageID::CastTutorial)].element = new Page_CastTutorial();
     m_pages[u32(PageID::TouchDuel)].element = new Page_TouchDuel();
 
     m_imgCursorTimer = 0;
@@ -113,7 +114,7 @@ void System::executeThread()
 
     ShowPage(System::PageID::Movie, System::Display::TV);
     ShowPage(System::PageID::Background, System::Display::DRC);
-    ShowPage(System::PageID::EncounterSelect, System::Display::DRC);
+    ShowPage(System::PageID::SelectAdventureCategory, System::Display::DRC);
 
     WaitVSync();
 

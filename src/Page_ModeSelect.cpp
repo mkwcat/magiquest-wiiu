@@ -19,7 +19,7 @@ Page_ModeSelect::Page_ModeSelect()
 
     append(&m_title);
 
-    m_bannerTouchDuel.Load(RES_ROOT "/Image/Menu/Button/BannerTouchDuel.png");
+    m_bannerTouchDuel.Load(RES_ROOT "/Image/Menu/Button/Banner/TouchDuel.png");
     m_bannerTouchDuel.setScaleX(300 / m_bannerTouchDuel.getHeight());
     m_bannerTouchDuel.setScaleY(300 / m_bannerTouchDuel.getHeight());
     m_btnTouchDuel.setImage(&m_bannerTouchDuel);
@@ -29,7 +29,7 @@ Page_ModeSelect::Page_ModeSelect()
 
     append(&m_btnTouchDuel);
 
-    m_bannerCastDuel.Load(RES_ROOT "/Image/Menu/Button/BannerCastDuel.png");
+    m_bannerCastDuel.Load(RES_ROOT "/Image/Menu/Button/Banner/CastDuel.png");
     m_bannerCastDuel.setScaleX(300 / m_bannerCastDuel.getHeight());
     m_bannerCastDuel.setScaleY(300 / m_bannerCastDuel.getHeight());
     m_btnCastDuel.setImage(&m_bannerCastDuel);
@@ -39,7 +39,7 @@ Page_ModeSelect::Page_ModeSelect()
 
     append(&m_btnCastDuel);
 
-    m_bannerRealWand.Load(RES_ROOT "/Image/Menu/Button/BannerRealWand.png");
+    m_bannerRealWand.Load(RES_ROOT "/Image/Menu/Button/Banner/RealWand.png");
     m_bannerRealWand.setScaleX(300 / m_bannerRealWand.getHeight());
     m_bannerRealWand.setScaleY(300 / m_bannerRealWand.getHeight());
     m_btnRealWand.setImage(&m_bannerRealWand);

@@ -30,9 +30,10 @@ public:
     enum class PageID {
         Movie,
         Background,
-        EncounterSelect,
+        SelectAdventureCategory,
+        SelectAdventure,
         ModeSelect,
-        CastModeConfirm,
+        CastTutorial,
         TouchDuel,
 
         PageCount,

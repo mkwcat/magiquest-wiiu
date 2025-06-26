@@ -36,7 +36,7 @@ void Page_TouchDuel::Init()
     m_btnBack.InitDefault(Ctrl_CommonButton::Type::MiddleMenu);
     m_btnBack.setPosition(0, -(1080.0 / 2) + 120);
     m_btnBack.setAlignment(ALIGN_CENTER | ALIGN_BOTTOM);
-    m_btnBack.SetOnSelectGotoPage(System::GetPageID(this), System::PageID::EncounterSelect);
+    m_btnBack.SetOnSelectGotoPage(System::GetPageID(this), System::PageID::SelectAdventureCategory);
     append(&m_btnBack);
 }
 
