@@ -6,23 +6,18 @@
 #include "WandHandler.hpp"
 #include <gui/GuiFrame.h>
 
+class Encounter;
+
 class Page_TouchDuel : public GuiFrame, public WandHandler
 {
 public:
-    enum class EncounterType {
-        Dragon,
-        SilverDragon,
-        Golem,
-        Xavier,
-    };
-
     Page_TouchDuel();
     ~Page_TouchDuel() override;
 
     void process() override;
     void draw(CVideo* v) override;
     void update(GuiController* controller) override;
-    void LoadEncounter(EncounterType type);
+    void LoadEncounter(Encounter::Type type);
     void Transition();
     void Cast(Wand::CastMode castMode, bool curValid, float curX, float curY, float curZ) override;
 

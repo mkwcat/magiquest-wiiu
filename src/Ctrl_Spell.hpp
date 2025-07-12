@@ -6,8 +6,6 @@
 #pragma once
 
 #include "Ctrl_Image.hpp"
-#include "System.hpp"
-#include "Util.hpp"
 #include <cstring>
 #include <gctypes.h>
 #include <gui/GuiButton.h>
@@ -98,8 +96,11 @@ public:
             setImage(&m_images[m_notSelectableImg]);
             m_selected = false;
         } else {
-            setImage(&m_images[m_notSelectedImg]);
-            m_selected = false;
+            if (m_selected) {
+                setImage(&m_images[m_selectedImg]);
+            } else {
+                setImage(&m_images[m_notSelectedImg]);
+            }
         }
     }
 
@@ -135,6 +136,12 @@ public:
         }
 
         m_onReleaseHandler(this);
+    }
+
+    Ctrl_Image& GetImage(u32 index)
+    {
+        assert(index < m_images.size());
+        return m_images[index];
     }
 
 private:

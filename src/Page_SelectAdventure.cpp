@@ -25,16 +25,23 @@ Page_SelectAdventure::Page_SelectAdventure()
 
     // Magi Adventure
     RegisterAdventure( //
-      0, 0, "Dragon", Category::Magi, Page_TouchDuel::EncounterType::Dragon, "Dragon.jpg");
+      0, 0, "Dragon", Category::Magi, Encounter::Type::Dragon, "Dragon.jpg");
+
+    // Master Magi Adventure
+    RegisterAdventure( //
+      1, 0, "Ice Dragon", Category::MasterMagi, Encounter::Type::IceDragon, "IceDragon.jpg");
+
+    // Heroic Adventure
+    RegisterAdventure( //
+      2, 0, "Heroic Dragon", Category::Heroic, Encounter::Type::HeroicDragon, "HeroicDragon.png");
 
     // Portal Adventure
     RegisterAdventure( //
-      1, 0, "Silver Dragon", Category::Portal, Page_TouchDuel::EncounterType::SilverDragon,
-      "SilverDragon.png");
+      3, 0, "Silver Dragon", Category::Portal, Encounter::Type::SilverDragon, "SilverDragon.png");
     RegisterAdventure( //
-      2, 1, "Xavier", Category::Portal, Page_TouchDuel::EncounterType::Xavier, "BaseFrame.png");
+      4, 1, "Xavier", Category::Portal, Encounter::Type::Xavier, "BaseFrame.png");
     RegisterAdventure( //
-      3, 2, "Golem", Category::Portal, Page_TouchDuel::EncounterType::Golem, "BaseFrame.png");
+      5, 2, "Golem", Category::Portal, Encounter::Type::Golem, "BaseFrame.png");
 }
 
 void Page_SelectAdventure::process()
@@ -48,7 +55,7 @@ void Page_SelectAdventure::process()
 }
 
 void Page_SelectAdventure::RegisterAdventure(u32 index, int categoryIndex, const char* name,
-  Category category, Page_TouchDuel::EncounterType encounter, const char* imageName)
+  Category category, Encounter::Type encounter, const char* imageName)
 {
     assert(index < std::size(m_adventures));
     m_adventures[index].encounterType = encounter;

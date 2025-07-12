@@ -13,6 +13,15 @@
 class Encounter : public WandHandler
 {
 public:
+    enum class Type {
+        Dragon,
+        IceDragon,
+        HeroicDragon,
+        SilverDragon,
+        Golem,
+        Xavier,
+    };
+
     Encounter();
     virtual ~Encounter();
 
@@ -51,9 +60,11 @@ public:
         return Page_Background::ImageType::TouchDuelBlizzardDawn;
     }
 
+    virtual Type GetEncounterType() const = 0;
+
 private:
-    u8 m_manaLeft = 0;
-    u8 m_manaRight = 0;
+    u8 m_manaLeft;
+    u8 m_manaRight;
 
 public:
     /**

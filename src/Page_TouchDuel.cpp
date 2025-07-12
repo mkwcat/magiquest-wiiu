@@ -1,11 +1,12 @@
 #include "Page_TouchDuel.hpp"
 #include "Ctrl_CommonButton.hpp"
-#include "Page_DuelDragon.hpp"
-#include "Page_DuelGolem.hpp"
-#include "Page_DuelSilverDragon.hpp"
-#include "Page_DuelXavier.hpp"
+#include "Page_Encounter_Dragon.hpp"
+#include "Page_Encounter_Golem.hpp"
+#include "Page_Encounter_HeroicDragon.hpp"
+#include "Page_Encounter_IceDragon.hpp"
+#include "Page_Encounter_SilverDragon.hpp"
+#include "Page_Encounter_Xavier.hpp"
 #include "Page_Projector.hpp"
-#include "WandHandler.hpp"
 
 Page_TouchDuel::Page_TouchDuel()
 {
@@ -92,7 +93,7 @@ void Page_TouchDuel::update(GuiController* controller)
     GuiFrame::update(controller);
 }
 
-void Page_TouchDuel::LoadEncounter(EncounterType type)
+void Page_TouchDuel::LoadEncounter(Encounter::Type type)
 {
     if (m_nextEncounter) {
         delete m_nextEncounter;
@@ -100,7 +101,7 @@ void Page_TouchDuel::LoadEncounter(EncounterType type)
     }
 
 #define CASE_ENCOUNTER(_TYPE, _CLASS)                                                              \
-    case EncounterType::_TYPE: {                                                                   \
+    case Encounter::Type::_TYPE: {                                                                 \
         auto* obj = new _CLASS();                                                                  \
         m_nextEncounter = obj;                                                                     \
         m_nextEncounterFrame = obj;                                                                \
@@ -109,10 +110,12 @@ void Page_TouchDuel::LoadEncounter(EncounterType type)
     }
 
     switch (type) {
-        CASE_ENCOUNTER(Dragon, Page_DuelDragon)
-        CASE_ENCOUNTER(SilverDragon, Page_DuelSilverDragon)
-        CASE_ENCOUNTER(Golem, Page_DuelGolem)
-        CASE_ENCOUNTER(Xavier, Page_DuelXavier)
+        CASE_ENCOUNTER(Dragon, Page_Encounter_Dragon)
+        CASE_ENCOUNTER(IceDragon, Page_Encounter_IceDragon)
+        CASE_ENCOUNTER(HeroicDragon, Page_Encounter_HeroicDragon)
+        CASE_ENCOUNTER(SilverDragon, Page_Encounter_SilverDragon)
+        CASE_ENCOUNTER(Golem, Page_Encounter_Golem)
+        CASE_ENCOUNTER(Xavier, Page_Encounter_Xavier)
     default:
         PANIC("Unknown encounter type");
     }

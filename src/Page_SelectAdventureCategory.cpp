@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "Page_SelectAdventureCategory.hpp"
+#include "Page_Background.hpp"
 #include "Page_SelectAdventure.hpp"
 
 Page_SelectAdventureCategory::Page_SelectAdventureCategory()

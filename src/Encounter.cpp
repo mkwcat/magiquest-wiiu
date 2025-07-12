@@ -8,6 +8,8 @@
 #include "System.hpp"
 
 Encounter::Encounter()
+  : m_manaLeft(0)
+  , m_manaRight(0)
 {
 }
 

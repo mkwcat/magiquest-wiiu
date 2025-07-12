@@ -29,7 +29,7 @@ public:
     void process() override;
 
     void RegisterAdventure(u32 index, int categoryIndex, const char* name, Category category,
-      Page_TouchDuel::EncounterType encounter, const char* imageName = nullptr);
+      Encounter::Type encounter, const char* imageName = nullptr);
 
     void SetCategory(Category category);
 
@@ -43,7 +43,7 @@ private:
         Ctrl_Image banner;
         Ctrl_Image title;
         GuiButton button{300, 375};
-        Page_TouchDuel::EncounterType encounterType;
+        Encounter::Type encounterType;
         Category category;
     };
 
