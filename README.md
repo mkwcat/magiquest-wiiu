@@ -1,6 +1,15 @@
-# MagiQuest Xavier Wii U
+# MagiQuest Wii U
 
-A reimplementation of the never released MagiQuest Xavier encounter on the Wii U. Based on the JavaScript version by SinKillerJ Tachikawa. For more information, read the [original post on Reddit](https://www.reddit.com/r/MagiQuest/comments/9be26s/xavier/).
+Recreations of MagiQuest Legacy encounters, including the never released Xavier encounter, on the Wii U. The following encounters are included:
+- Dragon / Charlock
+- Goblin King (does not contain the guard or princess... yet)
+- Ice Dragon / Winterra
+- Silver Dragon
+- Heroic Dragon (unfinished, contains an edited clip)
+- Xavier
+- Golem / Kalo (from MagiQuest Online)
+
+Assets source: [The MagiQuest Archive Rev0 on archive.org](https://archive.org/details/magiquestarchive)
 
 ## Building
 
@@ -8,9 +17,9 @@ To compile you'll need:
 
 - devkitPPC (with the DEVKITPPC environment variable set)
 - [wut](https://github.com/devkitPro/wut/)
-- [wut version of libgui](https://github.com/wiiu-env/libgui/) and all its dependencies
+- Install the required portlibs via `(dkp-)pacman -Syu ppc-zlib ppc-libogg ppc-libgd ppc-freetype ppc-libjpeg-turbo ppc-libpng ppc-glm ppc-bzip2`
 
-The assets can be found in the release download. You can replace the `magiquest-wiiu.rpx` file with your build.
+After installing the prerequisites, simply run `make`. The output executable (rpx) will be in the created `code` directory. To package into a wuhb file, run `make wuhb`.
 
 ## License
 
