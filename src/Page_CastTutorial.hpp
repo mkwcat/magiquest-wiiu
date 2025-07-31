@@ -7,6 +7,7 @@
 
 #include "Ctrl_CommonButton.hpp"
 #include "Ctrl_Image.hpp"
+#include "Ctrl_TitleText.hpp"
 #include "System.hpp"
 #include "WandHandler.hpp"
 #include <gui/GuiButton.h>
@@ -32,8 +33,8 @@ public:
 private:
     bool m_initialized = false;
 
-    Ctrl_Image m_title;
-    Ctrl_Image m_instruction;
+    Ctrl_TitleText m_title{"CastDuel"};
+    Ctrl_Image m_instruction[4];
     Ctrl_Image m_imgCheck;
     Ctrl_CommonButton m_btnBack;
 };

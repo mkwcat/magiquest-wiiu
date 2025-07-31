@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "AudioFileOpus.hpp"
 #include "Ctrl_Spell.hpp"
 #include "Encounter.hpp"
 #include "System.hpp"
@@ -15,6 +16,13 @@
 
 class Page_Encounter_Dragon : public GuiFrame, public Encounter
 {
+public:
+    Page_Encounter_Dragon();
+
+    ~Page_Encounter_Dragon() override
+    {
+    }
+
 protected:
     enum class Spell {
         Protection,
@@ -44,18 +52,16 @@ protected:
 
     void InitSpell(Spell spell, const char* const* images, int posX, int posY);
 
-    void Init();
-
 public:
     /**
-     * GuiElement process.
+     * TransitionFirst from Encounter.
      */
-    void process() override;
+    void TransitionFirst() override;
 
     /**
-     * Transition from Encounter.
+     * TransitionSecond from Encounter.
      */
-    void Transition() override;
+    void TransitionSecond() override;
 
 private:
     const char* NextPhase();
@@ -131,9 +137,9 @@ protected:
     // i.e iFireballThrown, value would overflow
     u32 m_magiHitCount = 0;
 
-    bool m_initialized = false;
-
     Phase m_currentPhase = Phase::Idle;
     Phase m_nextPhase = Phase::Idle;
     char m_phaseMoviePath[128];
+
+    AudioFileOpus m_enterSound;
 };

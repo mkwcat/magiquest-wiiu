@@ -12,10 +12,9 @@ Page_ModeSelect::Page_ModeSelect()
   , m_btnCastDuel(520, 200)
   , m_btnRealWand(520, 200)
 {
-    m_title.Load(RES_ROOT "/Image/Menu/Title/ModeSelect.png");
-    m_title.setPosition(0, 370);
-    m_title.setScaleX(1.8);
-    m_title.setScaleY(1.8);
+    m_btnBack.InitDefault(Ctrl_CommonButton::Type::LeftBack);
+    m_btnBack.SetOnSelectGotoPage(System::PageID::ModeSelect, System::PageID::SelectAdventure);
+    append(&m_btnBack);
 
     append(&m_title);
 
@@ -61,6 +60,7 @@ void Page_ModeSelect::OnSelectTouchDuel(
 
     sys()->GetWand()->SetCastMode(Wand::CastMode::WiiRemoteTouchRune);
 
+    button->resetState();
     sys()->HidePage(System::GetPageID(this), System::Display::All);
     System::GetPageStatic<Page_TouchDuel>()->Transition();
     sys()->ShowPage(System::GetPageID<Page_TouchDuel>(), System::Display::DRC);
@@ -73,6 +73,7 @@ void Page_ModeSelect::OnSelectCastDuel(
 
     sys()->GetWand()->SetCastMode(Wand::CastMode::WiiRemoteCastRune);
 
+    button->resetState();
     sys()->HidePage(System::GetPageID(this), System::Display::All);
     sys()->ShowPage(System::GetPageID<Page_CastTutorial>(), System::Display::DRC);
 }
@@ -84,6 +85,7 @@ void Page_ModeSelect::OnSelectRealWand(
 
     sys()->GetWand()->SetCastMode(Wand::CastMode::RealWand);
 
+    button->resetState();
     sys()->HidePage(System::GetPageID(this), System::Display::All);
     System::GetPageStatic<Page_TouchDuel>()->Transition();
     sys()->ShowPage(System::GetPageID<Page_TouchDuel>(), System::Display::DRC);

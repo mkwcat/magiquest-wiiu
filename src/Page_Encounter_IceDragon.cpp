@@ -4,10 +4,10 @@ const char* Page_Encounter_IceDragon::FailClip(const char* clip)
 {
     SetMana(0, 0);
     m_nextPhase = Phase::End;
-    m_buttons[u32(Spell::Protection)].SetSelectable(false);
-    m_buttons[u32(Spell::Freeze)].SetSelectable(false);
-    m_buttons[u32(Spell::IceArrow)].SetSelectable(false);
-    m_buttons[u32(Spell::Reveal)].SetSelectable(false);
+    m_buttons[u32(Spell::Protection)].SetHoverable(false);
+    m_buttons[u32(Spell::Freeze)].SetHoverable(false);
+    m_buttons[u32(Spell::IceArrow)].SetHoverable(false);
+    m_buttons[u32(Spell::Reveal)].SetHoverable(false);
     return clip;
 }
 
@@ -20,9 +20,9 @@ const char* Page_Encounter_IceDragon::NextPhase()
         m_nextPhase = Phase::Idle;
         SetMana(0, 0);
         SetMana(1, 0);
-        m_imgMq.Select();
+        m_imgMq.Hover();
         for (u32 i = 0; i < SpellCount; i++) {
-            m_buttons[i].SetSelectable(false);
+            m_buttons[i].SetHoverable(false);
         }
         // Fall through
 
@@ -122,10 +122,10 @@ const char* Page_Encounter_IceDragon::NextPhase()
 
             m_nextPhase = Phase::ArrowFireball;
             m_allowProtection = true;
-            m_buttons[u32(Spell::Protection)].SetSelectable(true);
-            m_buttons[u32(Spell::Freeze)].SetSelectable(true);
-            m_buttons[u32(Spell::IceArrow)].SetSelectable(true);
-            m_buttons[u32(Spell::Reveal)].SetSelectable(true);
+            m_buttons[u32(Spell::Protection)].SetHoverable(true);
+            m_buttons[u32(Spell::Freeze)].SetHoverable(true);
+            m_buttons[u32(Spell::IceArrow)].SetHoverable(true);
+            m_buttons[u32(Spell::Reveal)].SetHoverable(true);
 
             if (m_dragonHitCount == 1) {
                 SetMana(1, 10);
@@ -136,10 +136,10 @@ const char* Page_Encounter_IceDragon::NextPhase()
             } else {
                 SetMana(1, 0);
                 m_nextPhase = Phase::End;
-                m_buttons[u32(Spell::Protection)].SetSelectable(false);
-                m_buttons[u32(Spell::Freeze)].SetSelectable(false);
-                m_buttons[u32(Spell::IceArrow)].SetSelectable(false);
-                m_buttons[u32(Spell::Reveal)].SetSelectable(false);
+                m_buttons[u32(Spell::Protection)].SetHoverable(false);
+                m_buttons[u32(Spell::Freeze)].SetHoverable(false);
+                m_buttons[u32(Spell::IceArrow)].SetHoverable(false);
+                m_buttons[u32(Spell::Reveal)].SetHoverable(false);
                 return "ID15";
             }
         } else {

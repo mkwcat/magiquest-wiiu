@@ -28,9 +28,9 @@ void Page_Encounter_Xavier::InitSpell(Spell spell, const char** images, int posX
     m_buttons[btn].Init("SpellButton", RES_ROOT "/Image/Encounter/Spell/Xavier", images, 7);
     m_buttons[btn].SetImages(IMG_SELECTED, IMG_NOTSELECTED, IMG_NOTSELECTED);
 
-    m_buttons[btn].SetOnSelectHandler([&](Ctrl_Spell* spell) {
+    m_buttons[btn].SetOnHoverHandler([&](Ctrl_Spell* spell) {
         DeselectAll();
-        spell->Select();
+        spell->Hover();
     });
     m_buttons[btn].SetOnReleaseHandler([&](Ctrl_Spell* spell) {
         // Do nothing
@@ -40,12 +40,12 @@ void Page_Encounter_Xavier::InitSpell(Spell spell, const char** images, int posX
     m_buttons[btn].setScaleX(1.5);
     m_buttons[btn].setScaleY(1.5);
 
-    m_buttons[btn].SetSelectable(false);
+    m_buttons[btn].SetHoverable(false);
 
     append(&m_buttons[btn]);
 }
 
-void Page_Encounter_Xavier::Init()
+Page_Encounter_Xavier::Page_Encounter_Xavier()
 {
     static const char* KreigerImages[] = {
       [IMG_NOTSELECTED] = "Kreiger",
@@ -108,17 +108,7 @@ void Page_Encounter_Xavier::Init()
     InitSpell(Spell::Shadow, SchattenImages, -250, 350);
 }
 
-void Page_Encounter_Xavier::process()
-{
-    if (!m_initialized) {
-        Init();
-        m_initialized = true;
-    }
-
-    GuiFrame::process();
-}
-
-void Page_Encounter_Xavier::Transition()
+void Page_Encounter_Xavier::TransitionFirst()
 {
     m_currentPhase = Phase::Idle;
     m_nextPhase = Phase::MagiWin;
@@ -374,8 +364,8 @@ const char* Page_Encounter_Xavier::NextMovie()
             break;
         }
 
-        m_buttons[i].Deselect();
-        m_buttons[i].SetSelectable(m_isInputPhase && m_buttonUses[i] < 2);
+        m_buttons[i].Unhover();
+        m_buttons[i].SetHoverable(m_isInputPhase && m_buttonUses[i] < 2);
     }
 
     return m_phaseMoviePath;
@@ -416,7 +406,7 @@ void Page_Encounter_Xavier::Cast(
     if (castMode == Wand::CastMode::WiiRemoteCastRune && curValid && m_isInputPhase &&
         (curX < 640 && curX > -640 && curY < 450 && curY > -450)) {
         for (u32 i = 0; i < SpellCount; i++) {
-            if (!m_buttons[i].IsSelectable()) {
+            if (!m_buttons[i].IsHoverable()) {
                 continue;
             }
 
@@ -424,14 +414,14 @@ void Page_Encounter_Xavier::Cast(
             auto y = m_buttons[i].getCenterY();
             if (curX > x - 240 && curX < x + 240 && curY > y - 240 && curY < y + 240) {
                 DeselectAll();
-                m_buttons[i].Select();
+                m_buttons[i].Hover();
             }
         }
         return;
     }
 
     for (u32 i = 0; i < SpellCount; i++) {
-        if (!m_buttons[i].IsSelected()) {
+        if (!m_buttons[i].IsHoverable()) {
             continue;
         }
 
@@ -467,6 +457,6 @@ void Page_Encounter_Xavier::Cast(
 void Page_Encounter_Xavier::DeselectAll()
 {
     for (u32 i = 0; i < SpellCount; i++) {
-        m_buttons[i].Deselect();
+        m_buttons[i].Unhover();
     }
 }

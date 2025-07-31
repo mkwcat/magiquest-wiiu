@@ -6,6 +6,7 @@
 #include "Page_CastTutorial.hpp"
 #include "Ctrl_CommonButton.hpp"
 #include "Page_TouchDuel.hpp"
+#include "Util.hpp"
 
 void Page_CastTutorial::Init()
 {
@@ -14,19 +15,35 @@ void Page_CastTutorial::Init()
 
     append(&m_btnBack);
 
-    m_title.Load(RES_ROOT "/Image/Menu/Title/CastDuel.png");
-    m_title.setPosition(0, 370);
-    m_title.setScaleX(1.8);
-    m_title.setScaleY(1.8);
-
     append(&m_title);
 
-    m_instruction.Load(RES_ROOT "/Image/Menu/Title/CastDuelInstruction.png");
-    m_instruction.setPosition(0, 20);
-    m_instruction.setScaleX(1.5);
-    m_instruction.setScaleY(1.5);
+    m_instruction[0].Load(RES_ROOT "/Image/Menu/Title/CastDuelInstructionLine1.png");
+    m_instruction[0].setPosition(0, 150);
+    m_instruction[0].setScaleX(DRC_PIXEL_SCALE);
+    m_instruction[0].setScaleY(DRC_PIXEL_SCALE);
 
-    append(&m_instruction);
+    append(&m_instruction[0]);
+
+    m_instruction[1].Load(RES_ROOT "/Image/Menu/Title/CastDuelInstructionLine2.png");
+    m_instruction[1].setPosition(0, 50);
+    m_instruction[1].setScaleX(DRC_PIXEL_SCALE);
+    m_instruction[1].setScaleY(DRC_PIXEL_SCALE);
+
+    append(&m_instruction[1]);
+
+    m_instruction[2].Load(RES_ROOT "/Image/Menu/Title/CastDuelInstructionLine3.png");
+    m_instruction[2].setPosition(0, -50);
+    m_instruction[2].setScaleX(DRC_PIXEL_SCALE);
+    m_instruction[2].setScaleY(DRC_PIXEL_SCALE);
+
+    append(&m_instruction[2]);
+
+    m_instruction[3].Load(RES_ROOT "/Image/Menu/Title/CastDuelInstructionLine4.png");
+    m_instruction[3].setPosition(0, -150);
+    m_instruction[3].setScaleX(DRC_PIXEL_SCALE);
+    m_instruction[3].setScaleY(DRC_PIXEL_SCALE);
+
+    append(&m_instruction[3]);
 
     m_imgCheck.Load(RES_ROOT "/Image/Menu/Button/WaxSealGreenCheck.png");
     m_imgCheck.setPosition(550, -280);

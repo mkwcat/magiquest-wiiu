@@ -102,3 +102,26 @@ inline u32 Random(u32 max)
     state = u64(state) * 1664525 + 1013904223;
     return u32(state % max);
 }
+
+constexpr double DRC_PIXEL_SCALE = 1080.0 / 480.0;
+
+template <class T>
+[[gnu::const]] constexpr T AlignUp(unsigned int align, T num) noexcept
+{
+    size_t raw = (size_t) num;
+    return (T) ((raw + align - 1) & -align);
+}
+
+template <class T>
+[[gnu::const]] constexpr T AlignDown(unsigned int align, T num) noexcept
+{
+    size_t raw = (size_t) num;
+    return (T) (raw & -align);
+}
+
+template <class T>
+[[gnu::const]] constexpr bool IsAligned(unsigned int align, T num) noexcept
+{
+    size_t raw = (size_t) num;
+    return (raw & (align - 1)) == 0;
+}

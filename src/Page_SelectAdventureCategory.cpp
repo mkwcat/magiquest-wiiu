@@ -9,11 +9,6 @@
 
 Page_SelectAdventureCategory::Page_SelectAdventureCategory()
 {
-    m_title.Load(RES_ROOT "/Image/Menu/Title/ModeSelect.png");
-    m_title.setPosition(0, 370);
-    m_title.setScaleX(1.8);
-    m_title.setScaleY(1.8);
-
     append(&m_title);
 
     InitButton(m_bannerMagiAdventure, m_btnMagiAdventure,
@@ -69,6 +64,7 @@ void Page_SelectAdventureCategory::OnSelect(
         adventurePage->SetCategory(Page_SelectAdventure::Category::Heroic);
     }
 
+    button->resetState();
     sys()->HidePage(System::GetPageID(this), System::Display::All);
     sys()->ShowPage(System::GetPageID<Page_SelectAdventure>(), System::Display::DRC);
 }

@@ -15,6 +15,10 @@
 
 class Page_Encounter_SilverDragon : public GuiFrame, public Encounter
 {
+public:
+    Page_Encounter_SilverDragon();
+
+protected:
     enum class Spell {
         // Crystals must be first
 
@@ -40,18 +44,11 @@ class Page_Encounter_SilverDragon : public GuiFrame, public Encounter
 
     void InitSpell(Spell spell, const char* const* images, float posX, float posY, float size);
 
-    void Init();
-
 public:
     /**
-     * GuiElement process.
+     * TransitionFirst from Encounter.
      */
-    void process() override;
-
-    /**
-     * Transition from Encounter.
-     */
-    void Transition() override;
+    void TransitionFirst() override;
 
 private:
     const char* NextPhase();
@@ -99,7 +96,7 @@ private:
      */
     void DeselectAll();
 
-    Ctrl_Spell m_buttons[SpellCount];
+    std::array<Ctrl_Spell, SpellCount> m_buttons;
     std::array<Spell, 32> m_castSpell = {};
     u32 m_castSpellCount = 0;
     std::array<Spell, 32> m_queueSpell = {};
@@ -107,8 +104,7 @@ private:
     int m_sequence = 0;
     std::array<Spell, 7> m_pattern = {};
     int m_patternCount = 0;
-
-    bool m_initialized = false;
+    std::array<Ctrl_Image, 32> m_queueDisplay;
 
     Phase m_currentPhase = Phase::Idle;
     Phase m_nextPhase = Phase::Idle;

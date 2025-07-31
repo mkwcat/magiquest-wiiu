@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include "AXVoiceStream.hpp"
+#include "AudioVoiceStream.hpp"
 #include "Util.hpp"
 #include "minimp4.h"
 #include <coreinit/messagequeue.h>
@@ -150,12 +150,12 @@ private:
     /**
      * Left audio voice.
      */
-    AXVoiceStream m_voiceL[2];
+    AudioVoiceStream m_voiceL[2];
 
     /**
      * Right audio voice.
      */
-    AXVoiceStream m_voiceR[2];
+    AudioVoiceStream m_voiceR[2];
 
     int m_curVoice = 0;
 

@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "System.hpp"
-#include "AXManager.hpp"
+#include "AudioManager.hpp"
 #include "Exception.hpp"
 #include "ResourceManager.hpp"
 #include "Wand.hpp"
@@ -77,7 +77,7 @@ System::~System()
 {
     LOG(LogSystem, "Leaving application");
 
-    AXManager::s_instance->Shutdown();
+    AudioManager::s_instance->Shutdown();
 
     for (auto set : m_pages) {
         LOG(LogSystem, "Deleting page %d", static_cast<int>(set.id));
@@ -92,8 +92,8 @@ System::~System()
         s_instance = nullptr;
     }
 
-    delete AXManager::s_instance;
-    LOG(LogSystem, "Deleted AXManager");
+    delete AudioManager::s_instance;
+    LOG(LogSystem, "Deleted AudioManager");
     delete m_wand;
 
     LOG(LogSystem, "Successfully shutdown");
@@ -177,12 +177,12 @@ void* System::RipFile(const char* path, u32* length)
     u32 filesize = ftell(file);
     fseek(file, 0, SEEK_SET);
 
-    u8* data = new (std::align_val_t(256)) u8[filesize];
+    void* data = std::aligned_alloc(256, AlignUp(256, filesize));
     auto ret = fread(data, filesize, 1, file);
     fclose(file);
 
     if (ret != 1) {
-        delete[] data;
+        std::free(data);
         data = nullptr;
     }
 
@@ -275,8 +275,11 @@ bool System::Tick()
 
     float curX, curY, curZ;
 
+    bool update = m_gamepad.update(m_video->getTvWidth(), m_video->getTvHeight());
+
     bool curValid;
-    m_wand->Update(&curX, &curY, &curZ, &curValid);
+    m_wand->Update(
+      m_gamepad.data.buttons_h & GuiTrigger::eButtons::BUTTON_UP, &curX, &curY, &curZ, &curValid);
 
     if (m_wand->IsCast()) {
         if (m_wand->GetCastMode() == Wand::CastMode::WiiRemoteCastRune && curValid) {
@@ -296,8 +299,6 @@ bool System::Tick()
     for (u32 i = 0; i < PageCount; i++) {
         m_pages[i] = m_nextSetting[i];
     }
-
-    bool update = m_gamepad.update(m_video->getTvWidth(), m_video->getTvHeight());
 
     std::array<PageSetting, PageCount> sets = m_pages;
 
@@ -393,7 +394,7 @@ int main(int argc, char** argv)
     libgui_memoryInitialize();
 
     // Create the audio manager
-    new AXManager();
+    new AudioManager();
 
     // Scoped System
     {

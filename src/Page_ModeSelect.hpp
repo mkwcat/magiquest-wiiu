@@ -5,8 +5,9 @@
 
 #pragma once
 
+#include "Ctrl_CommonButton.hpp"
 #include "Ctrl_Image.hpp"
-#include "System.hpp"
+#include "Ctrl_TitleText.hpp"
 #include <gui/GuiButton.h>
 #include <gui/GuiFrame.h>
 
@@ -28,7 +29,7 @@ private:
     void OnSelectRealWand(GuiButton* button, const GuiController* controller, GuiTrigger* trigger);
 
 private:
-    Ctrl_Image m_title;
+    Ctrl_TitleText m_title{"ModeSelect"};
 
     Ctrl_Image m_bannerTouchDuel;
     GuiButton m_btnTouchDuel;
@@ -40,4 +41,6 @@ private:
     GuiButton m_btnRealWand;
 
     GuiTrigger m_touchTrigger{GuiTrigger::CHANNEL_1, GuiTrigger::VPAD_TOUCH};
+
+    Ctrl_CommonButton m_btnBack;
 };

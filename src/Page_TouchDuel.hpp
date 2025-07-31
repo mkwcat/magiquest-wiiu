@@ -4,6 +4,7 @@
 #include "Ctrl_Mana.hpp"
 #include "Encounter.hpp"
 #include "WandHandler.hpp"
+#include <future>
 #include <gui/GuiFrame.h>
 
 class Encounter;
@@ -27,9 +28,9 @@ private:
     bool m_initialized = false;
     Encounter* m_encounter = nullptr;
     GuiFrame* m_encounterFrame = nullptr;
-    Encounter* m_nextEncounter = nullptr;
-    GuiFrame* m_nextEncounterFrame = nullptr;
     Ctrl_Mana m_manaLeft;
     Ctrl_Mana m_manaRight;
     Ctrl_CommonButton m_btnBack;
+
+    std::future<void> m_nextEncounter;
 };

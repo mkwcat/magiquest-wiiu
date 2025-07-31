@@ -1,4 +1,4 @@
 #include "Config.hpp"
 
 bool Config::EnableUnusedClips = true;
-bool Config::UseDragonWand = true;
+bool Config::UseDragonWand = false;

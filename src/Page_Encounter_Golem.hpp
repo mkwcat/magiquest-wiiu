@@ -48,18 +48,11 @@ protected:
 
     void InitSpell(Spell spell, const char** images, int posX, int posY);
 
-    void Init();
-
 public:
     /**
-     * GuiElement process.
+     * TransitionSecond from Encounter.
      */
-    void process() override;
-
-    /**
-     * Transition from Encounter.
-     */
-    void Transition() override;
+    void TransitionSecond() override;
 
 protected:
     const char* NextPhase(Spell castSpell);
@@ -98,12 +91,10 @@ protected:
      */
     void DeselectAll();
 
-    bool m_initialized;
+    Phase m_currentPhase = Phase::Idle;
+    Phase m_nextPhase = Phase::Idle;
+    char m_phaseMoviePath[128] = {};
+    bool m_isInputPhase = false;
 
-    Phase m_currentPhase;
-    Phase m_nextPhase;
-    char m_phaseMoviePath[128];
-    bool m_isInputPhase;
-
-    bool m_started;
+    bool m_started = false;
 };

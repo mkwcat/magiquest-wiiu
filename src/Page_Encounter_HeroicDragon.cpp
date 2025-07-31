@@ -5,20 +5,20 @@ const char* Page_Encounter_HeroicDragon::FailClip(const char* clip)
 {
     SetMana(0, 0);
     m_nextPhase = Phase::End;
-    m_buttons[u32(Spell::Protection)].SetSelectable(false);
-    m_buttons[u32(Spell::Freeze)].SetSelectable(false);
-    m_buttons[u32(Spell::IceArrow)].SetSelectable(false);
-    m_buttons[u32(Spell::Reveal)].SetSelectable(false);
+    m_buttons[u32(Spell::Protection)].SetHoverable(false);
+    m_buttons[u32(Spell::Freeze)].SetHoverable(false);
+    m_buttons[u32(Spell::IceArrow)].SetHoverable(false);
+    m_buttons[u32(Spell::Reveal)].SetHoverable(false);
     return clip;
 }
 
 const char* Page_Encounter_HeroicDragon::NextFailClip(const char* clip)
 {
     m_nextPhase = Phase::HeroicFail;
-    m_buttons[u32(Spell::Protection)].SetSelectable(false);
-    m_buttons[u32(Spell::Freeze)].SetSelectable(false);
-    m_buttons[u32(Spell::IceArrow)].SetSelectable(false);
-    m_buttons[u32(Spell::Reveal)].SetSelectable(false);
+    m_buttons[u32(Spell::Protection)].SetHoverable(false);
+    m_buttons[u32(Spell::Freeze)].SetHoverable(false);
+    m_buttons[u32(Spell::IceArrow)].SetHoverable(false);
+    m_buttons[u32(Spell::Reveal)].SetHoverable(false);
     return clip;
 }
 
@@ -31,9 +31,9 @@ const char* Page_Encounter_HeroicDragon::NextPhase()
         m_nextPhase = Phase::Idle;
         SetMana(0, 0);
         SetMana(1, 0);
-        m_imgMq.Select();
+        m_imgMq.Hover();
         for (u32 i = 0; i < SpellCount; i++) {
-            m_buttons[i].SetSelectable(false);
+            m_buttons[i].SetHoverable(false);
         }
         // Fall through
 
@@ -220,10 +220,10 @@ const char* Page_Encounter_HeroicDragon::NextPhase()
                 // Red Dragon: Ice Arrow 3
                 SetMana(1, 0);
                 m_nextPhase = Phase::End;
-                m_buttons[u32(Spell::Protection)].SetSelectable(false);
-                m_buttons[u32(Spell::Freeze)].SetSelectable(false);
-                m_buttons[u32(Spell::IceArrow)].SetSelectable(false);
-                m_buttons[u32(Spell::Reveal)].SetSelectable(false);
+                m_buttons[u32(Spell::Protection)].SetHoverable(false);
+                m_buttons[u32(Spell::Freeze)].SetHoverable(false);
+                m_buttons[u32(Spell::IceArrow)].SetHoverable(false);
+                m_buttons[u32(Spell::Reveal)].SetHoverable(false);
                 return "HeroicDragon/AdvHeroicDragonWin";
             } else if (m_dragonHitCount == 5) {
                 // Red Dragon: Ice Arrow 3
@@ -236,10 +236,10 @@ const char* Page_Encounter_HeroicDragon::NextPhase()
                 // Ice Dragon: Ice Arrow 3 (custom edited clip)
                 SetMana(1, 0);
                 m_nextPhase = Phase::End;
-                m_buttons[u32(Spell::Protection)].SetSelectable(false);
-                m_buttons[u32(Spell::Freeze)].SetSelectable(false);
-                m_buttons[u32(Spell::IceArrow)].SetSelectable(false);
-                m_buttons[u32(Spell::Reveal)].SetSelectable(false);
+                m_buttons[u32(Spell::Protection)].SetHoverable(false);
+                m_buttons[u32(Spell::Freeze)].SetHoverable(false);
+                m_buttons[u32(Spell::IceArrow)].SetHoverable(false);
+                m_buttons[u32(Spell::Reveal)].SetHoverable(false);
                 return "HeroicDragon/AdvHeroicDragonID15D20Custom";
             }
         } else {
@@ -273,11 +273,12 @@ const char* Page_Encounter_HeroicDragon::NextMovie()
 {
     if (m_currentPhase != Phase::Idle &&
         (m_currentPhase != Phase::Start || m_nextPhase == Phase::HeroicExpectProtection) &&
-        m_currentPhase != Phase::HeroicFail && m_currentPhase != Phase::End) {
-        m_buttons[u32(Spell::Protection)].SetSelectable(true);
-        m_buttons[u32(Spell::Freeze)].SetSelectable(true);
-        m_buttons[u32(Spell::IceArrow)].SetSelectable(true);
-        m_buttons[u32(Spell::Reveal)].SetSelectable(true);
+        m_currentPhase != Phase::HeroicFail && m_nextPhase != Phase::HeroicFail &&
+        m_currentPhase != Phase::End) {
+        m_buttons[u32(Spell::Protection)].SetHoverable(true);
+        m_buttons[u32(Spell::Freeze)].SetHoverable(true);
+        m_buttons[u32(Spell::IceArrow)].SetHoverable(true);
+        m_buttons[u32(Spell::Reveal)].SetHoverable(true);
     }
 
     m_currentPhase = m_nextPhase;
@@ -303,7 +304,7 @@ void Page_Encounter_HeroicDragon::Cast(
         SetMana(0, 16);
         SetMana(1, 16);
         DeselectAll();
-        m_imgMq.Deselect();
+        m_imgMq.Unhover();
         m_nextPhase = Phase::Start;
 
         // Prepare input for the next phase immediately
@@ -311,10 +312,10 @@ void Page_Encounter_HeroicDragon::Cast(
         m_allowIceArrow = false;
         m_allowProtection = true;
         m_allowReveal = false;
-        m_buttons[u32(Spell::Protection)].SetSelectable(true);
-        m_buttons[u32(Spell::Freeze)].SetSelectable(true);
-        m_buttons[u32(Spell::IceArrow)].SetSelectable(true);
-        m_buttons[u32(Spell::Reveal)].SetSelectable(true);
+        m_buttons[u32(Spell::Protection)].SetHoverable(true);
+        m_buttons[u32(Spell::Freeze)].SetHoverable(true);
+        m_buttons[u32(Spell::IceArrow)].SetHoverable(true);
+        m_buttons[u32(Spell::Reveal)].SetHoverable(true);
         m_castProtection = false;
         m_castFreeze = false;
         m_castIceArrow = false;
@@ -325,7 +326,7 @@ void Page_Encounter_HeroicDragon::Cast(
     if (castMode == Wand::CastMode::WiiRemoteCastRune && curValid &&
         (curX < 640 && curX > -640 && curY < 450 && curY > -450)) {
         for (u32 i = 0; i < SpellCount; i++) {
-            if (!m_buttons[i].IsSelectable()) {
+            if (!m_buttons[i].IsHoverable()) {
                 continue;
             }
 
@@ -333,7 +334,7 @@ void Page_Encounter_HeroicDragon::Cast(
             auto y = m_buttons[i].getCenterY();
             if (curX > x - 240 && curX < x + 240 && curY > y - 240 && curY < y + 240) {
                 DeselectAll();
-                m_buttons[i].Select();
+                m_buttons[i].Hover();
             }
         }
         return;
@@ -341,21 +342,21 @@ void Page_Encounter_HeroicDragon::Cast(
 
     Spell nowSpell = Spell::None;
 
-    if (m_buttons[u32(Spell::Protection)].IsSelected()) {
+    if (m_buttons[u32(Spell::Protection)].IsHovered()) {
         m_castProtection = true;
-        m_buttons[u32(Spell::Protection)].SetSelectable(false);
+        m_buttons[u32(Spell::Protection)].SetHoverable(false);
         nowSpell = Spell::Protection;
-    } else if (m_buttons[u32(Spell::Freeze)].IsSelected()) {
+    } else if (m_buttons[u32(Spell::Freeze)].IsHovered()) {
         m_castFreeze = true;
-        m_buttons[u32(Spell::Freeze)].SetSelectable(false);
+        m_buttons[u32(Spell::Freeze)].SetHoverable(false);
         nowSpell = Spell::Freeze;
-    } else if (m_buttons[u32(Spell::IceArrow)].IsSelected()) {
+    } else if (m_buttons[u32(Spell::IceArrow)].IsHovered()) {
         m_castIceArrow = true;
-        m_buttons[u32(Spell::IceArrow)].SetSelectable(false);
+        m_buttons[u32(Spell::IceArrow)].SetHoverable(false);
         nowSpell = Spell::IceArrow;
-    } else if (m_buttons[u32(Spell::Reveal)].IsSelected()) {
+    } else if (m_buttons[u32(Spell::Reveal)].IsHovered()) {
         m_castReveal = true;
-        m_buttons[u32(Spell::Reveal)].SetSelectable(false);
+        m_buttons[u32(Spell::Reveal)].SetHoverable(false);
         nowSpell = Spell::Reveal;
     } else {
         // No spell selected
@@ -365,19 +366,19 @@ void Page_Encounter_HeroicDragon::Cast(
     // Uncast previous selected spells
     if (m_castProtection && nowSpell != Spell::Protection) {
         m_castProtection = false;
-        m_buttons[u32(Spell::Protection)].SetSelectable(true);
+        m_buttons[u32(Spell::Protection)].SetHoverable(true);
     }
     if (m_castFreeze && nowSpell != Spell::Freeze) {
         m_castFreeze = false;
-        m_buttons[u32(Spell::Freeze)].SetSelectable(true);
+        m_buttons[u32(Spell::Freeze)].SetHoverable(true);
     }
     if (m_castIceArrow && nowSpell != Spell::IceArrow) {
         m_castIceArrow = false;
-        m_buttons[u32(Spell::IceArrow)].SetSelectable(true);
+        m_buttons[u32(Spell::IceArrow)].SetHoverable(true);
     }
     if (m_castReveal && nowSpell != Spell::Reveal) {
         m_castReveal = false;
-        m_buttons[u32(Spell::Reveal)].SetSelectable(true);
+        m_buttons[u32(Spell::Reveal)].SetHoverable(true);
     }
 
     DeselectAll();

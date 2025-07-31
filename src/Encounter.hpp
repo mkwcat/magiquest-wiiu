@@ -15,6 +15,7 @@ class Encounter : public WandHandler
 public:
     enum class Type {
         Dragon,
+        GoblinKing,
         IceDragon,
         HeroicDragon,
         SilverDragon,
@@ -39,9 +40,16 @@ public:
     }
 
     /**
+     * Called when the encounter is selected in the menu.
+     */
+    virtual void TransitionFirst()
+    {
+    }
+
+    /**
      * Called when the UI transitions to this page.
      */
-    virtual void Transition()
+    virtual void TransitionSecond()
     {
     }
 

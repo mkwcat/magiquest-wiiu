@@ -17,10 +17,11 @@ public:
     Ctrl_Spell()
       : GuiButton(180, 180)
     {
-        m_selectable = true;
+        clickable = true;
+        selectable = true;
         setTrigger(&m_touchTrigger);
-        clicked.connect<Ctrl_Spell>(this, &Ctrl_Spell::OnClick);
-        released.connect<Ctrl_Spell>(this, &Ctrl_Spell::OnReleased);
+        clicked.connect<Ctrl_Spell>(this, &Ctrl_Spell::OnHover);
+        pointedOff.connect<Ctrl_Spell>(this, &Ctrl_Spell::OnReleased);
     }
 
     ~Ctrl_Spell()
@@ -45,25 +46,22 @@ public:
         }
     }
 
-    void SetImages(u32 selectedImg, u32 notSelectedImg, u32 notSelectableImg)
+    void SetImages(u32 hoveredImg, u32 notHoveredImg, u32 disabledImg)
     {
-        assert(selectedImg < m_images.size());
-        assert(notSelectedImg < m_images.size());
-        assert(notSelectableImg < m_images.size());
+        assert(hoveredImg < m_images.size());
+        assert(notHoveredImg < m_images.size());
+        assert(disabledImg < m_images.size());
 
-        m_selectedImg = selectedImg;
-        m_notSelectedImg = notSelectedImg;
-        m_notSelectableImg = notSelectableImg;
+        m_hoveredImg = hoveredImg;
+        m_notHoveredImg = notHoveredImg;
+        m_disabledImg = disabledImg;
 
-        setImage(&m_images[m_notSelectedImg]);
-
-        holdable = true;
-        clickable = true;
+        SetImage(m_notHoveredImg);
     }
 
-    void SetOnSelectHandler(std::function<void(Ctrl_Spell*)> handler)
+    void SetOnHoverHandler(std::function<void(Ctrl_Spell*)> handler)
     {
-        m_onSelectHandler = handler;
+        m_onHoverHandler = handler;
     }
 
     void SetOnReleaseHandler(std::function<void(Ctrl_Spell*)> handler)
@@ -71,42 +69,38 @@ public:
         m_onReleaseHandler = handler;
     }
 
-    void Select()
+    void Hover()
     {
-        setImage(&m_images[m_selectedImg]);
-        m_selected = true;
+        SetImage(m_hoveredImg);
     }
 
-    void Deselect()
+    void Unhover()
     {
-        setImage(&m_images[m_notSelectedImg]);
-        m_selected = false;
+        SetImage(m_notHoveredImg);
     }
 
-    bool IsSelected() const
+    bool IsHovered() const
     {
-        return m_selected;
+        return m_currentImg == m_hoveredImg;
     }
 
-    void SetSelectable(bool value)
+    void SetHoverable(bool value)
     {
-        m_selectable = value;
+        bool oldClickable = clickable;
+        clickable = value;
+        selectable = value;
 
-        if (!m_selectable) {
-            setImage(&m_images[m_notSelectableImg]);
-            m_selected = false;
-        } else {
-            if (m_selected) {
-                setImage(&m_images[m_selectedImg]);
-            } else {
-                setImage(&m_images[m_notSelectedImg]);
-            }
+        if (!clickable) {
+            SetImage(m_disabledImg);
+            clearState(STATE_OVER);
+        } else if (!oldClickable) {
+            SetImage(m_notHoveredImg);
         }
     }
 
-    bool IsSelectable() const
+    bool IsHoverable() const
     {
-        return m_selectable;
+        return clickable;
     }
 
     const char* GetName() const
@@ -117,21 +111,21 @@ public:
     /**
      * Called when the user touches the icon.
      */
-    void OnClick(GuiButton* button, const GuiController* controller, GuiTrigger* trigger)
+    void OnHover(GuiButton* button, const GuiController* controller, GuiTrigger* trigger)
     {
-        if (!m_selectable) {
+        if (!clickable) {
             return;
         }
 
-        m_onSelectHandler(this);
+        m_onHoverHandler(this);
     }
 
     /**
      * Called when the user stops touching the icon.
      */
-    void OnReleased(GuiButton* button, const GuiController* controller, GuiTrigger* trigger)
+    void OnReleased(GuiButton* button, const GuiController* controller)
     {
-        if (!m_selectable) {
+        if (!clickable) {
             return;
         }
 
@@ -144,6 +138,13 @@ public:
         return m_images[index];
     }
 
+    void SetImage(u32 index)
+    {
+        assert(index < m_images.size());
+        m_currentImg = index;
+        setImage(&m_images[index]);
+    }
+
 private:
     // Spell name
     char m_name[32];
@@ -152,13 +153,11 @@ private:
 
     GuiTrigger m_touchTrigger{GuiTrigger::CHANNEL_1, GuiTrigger::VPAD_TOUCH};
 
-    u32 m_selectedImg;
-    u32 m_notSelectedImg;
-    u32 m_notSelectableImg;
+    u32 m_hoveredImg;
+    u32 m_notHoveredImg;
+    u32 m_disabledImg;
+    u32 m_currentImg = 0;
 
-    bool m_selected;
-    bool m_selectable;
-
-    std::function<void(Ctrl_Spell*)> m_onSelectHandler;
+    std::function<void(Ctrl_Spell*)> m_onHoverHandler;
     std::function<void(Ctrl_Spell*)> m_onReleaseHandler;
 };

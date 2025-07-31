@@ -7,6 +7,7 @@
 
 #include "Ctrl_CommonButton.hpp"
 #include "Ctrl_Image.hpp"
+#include "Ctrl_TitleText.hpp"
 #include "Page_TouchDuel.hpp"
 #include <gui/GuiButton.h>
 #include <gui/GuiFrame.h>
@@ -29,7 +30,7 @@ public:
     void process() override;
 
     void RegisterAdventure(u32 index, int categoryIndex, const char* name, Category category,
-      Encounter::Type encounter, const char* imageName = nullptr);
+      Encounter::Type encounter, const char* imageName = nullptr, const char* titleName = nullptr);
 
     void SetCategory(Category category);
 
@@ -47,8 +48,8 @@ private:
         Category category;
     };
 
-    Ctrl_Image m_title;
-    std::array<Adventure, 6> m_adventures;
+    Ctrl_TitleText m_title{"SelectAdventure"};
+    std::array<Adventure, 7> m_adventures;
 
     GuiTrigger m_touchTrigger{GuiTrigger::CHANNEL_1, GuiTrigger::VPAD_TOUCH};
 

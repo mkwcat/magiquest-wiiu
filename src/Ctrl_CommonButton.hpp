@@ -72,6 +72,8 @@ public:
     {
         m_onSelectHandler = [hidePage, showPage](Ctrl_CommonButton* button) {
             System::Display display = sys()->GetDisplay(hidePage);
+
+            button->resetState();
             sys()->HidePage(hidePage, System::Display::All);
             sys()->ShowPage(showPage, display);
         };

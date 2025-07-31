@@ -27,7 +27,7 @@ private:
     void OnSelect(GuiButton* button, const GuiController* controller, GuiTrigger* trigger);
 
 private:
-    Ctrl_Image m_title;
+        Ctrl_TitleText m_title{"SelectAdventureCategory"};
 
     Ctrl_Image m_bannerMagiAdventure;
     GuiButton m_btnMagiAdventure{520, 200};

@@ -14,6 +14,10 @@
 
 class Page_Encounter_Xavier : public GuiFrame, public Encounter
 {
+public:
+    Page_Encounter_Xavier();
+
+private:
     enum class Spell {
         Warrior,
         Majestic,
@@ -58,18 +62,11 @@ protected:
 
     void InitSpell(Spell spell, const char** images, int posX, int posY);
 
-    void Init();
-
 public:
     /**
-     * GuiElement process.
+     * TransitionFirst from Encounter.
      */
-    void process() override;
-
-    /**
-     * Transition from Encounter.
-     */
-    void Transition() override;
+    void TransitionFirst() override;
 
 protected:
     const char* NextPhase(Spell castSpell);
@@ -121,8 +118,6 @@ protected:
      * Deselect all spells.
      */
     void DeselectAll();
-
-    bool m_initialized = false;
 
     Phase m_currentPhase = Phase::Idle;
     Phase m_nextPhase = Phase::Idle;

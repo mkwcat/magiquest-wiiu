@@ -1,12 +1,14 @@
 #include "Page_TouchDuel.hpp"
 #include "Ctrl_CommonButton.hpp"
 #include "Page_Encounter_Dragon.hpp"
+#include "Page_Encounter_GoblinKing.hpp"
 #include "Page_Encounter_Golem.hpp"
 #include "Page_Encounter_HeroicDragon.hpp"
 #include "Page_Encounter_IceDragon.hpp"
 #include "Page_Encounter_SilverDragon.hpp"
 #include "Page_Encounter_Xavier.hpp"
 #include "Page_Projector.hpp"
+#include <future>
 
 Page_TouchDuel::Page_TouchDuel()
 {
@@ -95,56 +97,60 @@ void Page_TouchDuel::update(GuiController* controller)
 
 void Page_TouchDuel::LoadEncounter(Encounter::Type type)
 {
-    if (m_nextEncounter) {
-        delete m_nextEncounter;
-        m_nextEncounter = nullptr;
-    }
+    auto movie = System::GetPageStatic<Page_Projector>();
+    assert(movie != nullptr);
+    movie->SetEncounter(nullptr);
 
-#define CASE_ENCOUNTER(_TYPE, _CLASS)                                                              \
-    case Encounter::Type::_TYPE: {                                                                 \
-        auto* obj = new _CLASS();                                                                  \
-        m_nextEncounter = obj;                                                                     \
-        m_nextEncounterFrame = obj;                                                                \
-        LOG(LogSystem, "Loading encounter: %s", #_TYPE);                                           \
-        break;                                                                                     \
-    }
-
-    switch (type) {
-        CASE_ENCOUNTER(Dragon, Page_Encounter_Dragon)
-        CASE_ENCOUNTER(IceDragon, Page_Encounter_IceDragon)
-        CASE_ENCOUNTER(HeroicDragon, Page_Encounter_HeroicDragon)
-        CASE_ENCOUNTER(SilverDragon, Page_Encounter_SilverDragon)
-        CASE_ENCOUNTER(Golem, Page_Encounter_Golem)
-        CASE_ENCOUNTER(Xavier, Page_Encounter_Xavier)
-    default:
-        PANIC("Unknown encounter type");
-    }
-#undef CASE_ENCOUNTER
-
-    m_nextEncounterFrame->process();
-}
-
-void Page_TouchDuel::Transition()
-{
     if (m_encounter) {
         delete m_encounter;
         m_encounter = nullptr;
         m_encounterFrame = nullptr;
     }
 
-    if (m_nextEncounter) {
-        m_encounter = m_nextEncounter;
-        m_nextEncounter = nullptr;
-        m_encounterFrame = m_nextEncounterFrame;
-        m_nextEncounterFrame = nullptr;
+    m_nextEncounter = std::async([type, movie, this]() {
+        Encounter* nextEncounter = nullptr;
+        GuiFrame* nextEncounterFrame = nullptr;
+
+#define CASE_ENCOUNTER(_TYPE, _CLASS)                                                              \
+    case Encounter::Type::_TYPE: {                                                                 \
+        LOG(LogSystem, "Loading encounter: %s", #_TYPE);                                           \
+        auto* obj = new _CLASS();                                                                  \
+        nextEncounter = obj;                                                                       \
+        nextEncounterFrame = obj;                                                                  \
+        break;                                                                                     \
     }
+        switch (type) {
+            CASE_ENCOUNTER(Dragon, Page_Encounter_Dragon)
+            CASE_ENCOUNTER(GoblinKing, Page_Encounter_GoblinKing)
+            CASE_ENCOUNTER(IceDragon, Page_Encounter_IceDragon)
+            CASE_ENCOUNTER(HeroicDragon, Page_Encounter_HeroicDragon)
+            CASE_ENCOUNTER(SilverDragon, Page_Encounter_SilverDragon)
+            CASE_ENCOUNTER(Golem, Page_Encounter_Golem)
+            CASE_ENCOUNTER(Xavier, Page_Encounter_Xavier)
+        default:
+            PANIC("Unknown encounter type");
+        }
+#undef CASE_ENCOUNTER
+
+        m_encounter = nextEncounter;
+        m_encounterFrame = nextEncounterFrame;
+
+        if (m_encounter) {
+            movie->SetEncounter(nextEncounter);
+            m_encounter->TransitionFirst();
+        }
+    });
+}
+
+void Page_TouchDuel::Transition()
+{
+    m_nextEncounter.wait();
 
     if (m_encounter) {
         auto movie = System::GetPageStatic<Page_Projector>();
         assert(movie != nullptr);
 
-        movie->SetEncounter(m_encounter);
-        m_encounter->Transition();
+        m_encounter->TransitionSecond();
     } else {
         LOG(LogSystem, "No encounter loaded for transition");
     }

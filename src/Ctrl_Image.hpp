@@ -13,6 +13,12 @@ public:
     {
     }
 
+    Ctrl_Image(const char* path)
+      : GuiImage(nullptr)
+    {
+        Load(path);
+    }
+
     void Load(const char* path)
     {
         ResourceManager::GetImage(&m_data, path);

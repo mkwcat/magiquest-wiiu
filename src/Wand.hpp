@@ -31,7 +31,7 @@ public:
     /**
      * Call every frame to update the cast state.
      */
-    void Update(float* curX, float* curY, float* curZ, bool* curValid);
+    void Update(bool testCast, float* curX, float* curY, float* curZ, bool* curValid);
 
     /**
      * If the wand has casted.

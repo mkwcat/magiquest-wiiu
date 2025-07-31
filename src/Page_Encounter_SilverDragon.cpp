@@ -22,31 +22,45 @@ void Page_Encounter_SilverDragon::InitSpell(
     m_buttons[btn].Init("SpellButton", RES_ROOT "/Image/Encounter/Spell/SilverDragon", images, 3);
     m_buttons[btn].SetImages(IMG_SELECTED, IMG_NOTSELECTED, IMG_DISABLED);
 
-    m_buttons[btn].SetOnSelectHandler([&, spell](Ctrl_Spell* spellObj) {
-        spellObj->Select();
+    m_buttons[btn].SetOnHoverHandler([this, spell](Ctrl_Spell* spellObj) {
+        if (m_isInputPhase) {
+            spellObj->Hover();
+            // TODO: I think it plays a sound normally, but that's not in the archive?
+            // Else no visual indicator but still functions
+        }
+
         if (m_queueSpellCount < std::size(m_queueSpell)) {
             m_queueSpell[m_queueSpellCount++] = spell;
+            if (m_queueSpellCount <= m_queueDisplay.size()) {
+                // Add to history display
+                m_queueDisplay[m_queueSpellCount - 1].setImageData(
+                  spellObj->GetImage(IMG_SELECTED).getImageData());
+                m_queueDisplay[m_queueSpellCount - 1].setVisible(true);
+            }
         }
     });
-    m_buttons[btn].SetOnReleaseHandler([](Ctrl_Spell* spellObj) { spellObj->Deselect(); });
+    m_buttons[btn].SetOnReleaseHandler([this](Ctrl_Spell* spellObj) {
+        if (m_isInputPhase) {
+            spellObj->Unhover();
+        }
+    });
 
     float scale = 0.9;
     posX *= scale;
     posY *= scale;
     posX -= 100;
     posY += 50;
-
     m_buttons[btn].setPosition(posX, posY);
     scale *= 1080.0 / m_buttons[btn].getHeight() * 0.85;
     m_buttons[btn].setScaleX(scale * size);
     m_buttons[btn].setScaleY(scale * size);
 
-    m_buttons[btn].SetSelectable(false);
+    m_buttons[btn].SetHoverable(true);
 
     append(&m_buttons[btn]);
 }
 
-void Page_Encounter_SilverDragon::Init()
+Page_Encounter_SilverDragon::Page_Encounter_SilverDragon()
 {
     using StringArray = const char* const[];
 
@@ -105,19 +119,17 @@ void Page_Encounter_SilverDragon::Init()
         [IMG_DISABLED] = "ShieldDisabled",
       },
       740, 320, 0.26);
-}
 
-void Page_Encounter_SilverDragon::process()
-{
-    if (!m_initialized) {
-        Init();
-        m_initialized = true;
+    for (u32 i = 0; i < m_queueDisplay.size(); i++) {
+        m_queueDisplay[i].setPosition(-600.0 + i * 110.0, -355.0);
+        m_queueDisplay[i].setScaleX(0.5);
+        m_queueDisplay[i].setScaleY(0.5);
+        m_queueDisplay[i].setVisible(true);
+        append(&m_queueDisplay[i]);
     }
-
-    GuiFrame::process();
 }
 
-void Page_Encounter_SilverDragon::Transition()
+void Page_Encounter_SilverDragon::TransitionFirst()
 {
     m_nextPhase = Phase::End;
     m_isInputPhase = false;
@@ -303,10 +315,17 @@ const char* Page_Encounter_SilverDragon::NextMovie()
     // Disable all buttons
     for (Spell i :
       {Spell::Blue, Spell::Red, Spell::White, Spell::Purple, Spell::Yellow, Spell::Medal}) {
-        m_buttons[u32(i)].SetSelectable(m_isInputPhase);
+        m_buttons[u32(i)].SetHoverable(m_isInputPhase);
     }
 
-    m_buttons[u32(Spell::Shield)].SetSelectable(m_isInputPhase && GetMana(0) == 16);
+    m_buttons[u32(Spell::Shield)].SetHoverable(m_isInputPhase && GetMana(0) == 16);
+
+    // Clear history
+    if (m_isInputPhase) {
+        for (auto& display : m_queueDisplay) {
+            display.setVisible(false);
+        }
+    }
 
     return m_phaseMoviePath;
 }
@@ -318,6 +337,9 @@ void Page_Encounter_SilverDragon::Cast(
 
     if (m_currentPhase == Phase::Idle || m_currentPhase == Phase::End) {
         m_nextPhase = Phase::Start;
+        for (u32 i = 0; i < m_queueDisplay.size(); i++) {
+            m_queueDisplay[i].setVisible(false);
+        }
         ForceNextMovie();
         return;
     }
@@ -325,7 +347,7 @@ void Page_Encounter_SilverDragon::Cast(
     if (castMode == Wand::CastMode::WiiRemoteCastRune && curValid && m_isInputPhase &&
         (curX < 640 && curX > -640 && curY < 450 && curY > -450)) {
         for (u32 i = 0; i < SpellCount; i++) {
-            if (!m_buttons[i].IsSelectable()) {
+            if (!m_buttons[i].IsHoverable()) {
                 continue;
             }
 
@@ -333,9 +355,20 @@ void Page_Encounter_SilverDragon::Cast(
             auto y = m_buttons[i].getCenterY();
             if (curX > x - 240 && curX < x + 240 && curY > y - 240 && curY < y + 240) {
                 DeselectAll();
-                m_buttons[i].Select();
+                if (m_isInputPhase) {
+                    m_buttons[i].Hover();
+                    // TODO: I think it plays a sound normally, but that's not in the archive?
+                    // Else no visual indicator but still functions
+                }
+
                 if (m_queueSpellCount < std::size(m_queueSpell)) {
                     m_queueSpell[m_queueSpellCount++] = static_cast<Spell>(i);
+                    if (m_queueSpellCount <= m_queueDisplay.size()) {
+                        // Add to history display
+                        m_queueDisplay[m_queueSpellCount - 1].setImageData(
+                          m_buttons[i].GetImage(0).getImageData());
+                        m_queueDisplay[m_queueSpellCount - 1].setVisible(true);
+                    }
                 }
             }
         }
@@ -353,6 +386,6 @@ void Page_Encounter_SilverDragon::Cast(
 void Page_Encounter_SilverDragon::DeselectAll()
 {
     for (u32 i = 0; i < SpellCount; i++) {
-        m_buttons[i].Deselect();
+        m_buttons[i].Unhover();
     }
 }

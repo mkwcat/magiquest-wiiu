@@ -4,54 +4,14 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "Page_Encounter_Golem.hpp"
-#include "Page_Background.hpp"
 #include <cstdlib>
-
-Page_Encounter_Golem::Page_Encounter_Golem()
-{
-    m_currentPhase = Phase::Idle;
-    m_nextPhase = Phase::Idle;
-    m_isInputPhase = false;
-    m_started = false;
-
-    m_initialized = false;
-}
-
-Page_Encounter_Golem::~Page_Encounter_Golem()
-{
-}
 
 enum {
     IMG_NOTSELECTED = 0,
     IMG_SELECTED = 1,
 };
 
-void Page_Encounter_Golem::InitSpell(Spell spell, const char** images, int posX, int posY)
-{
-    u32 btn = u32(spell);
-    assert(btn < SpellCount);
-
-    m_buttons[btn].Init("SpellButton", RES_ROOT "/Image/Encounter/Spell/Golem", images, 2);
-    m_buttons[btn].SetImages(IMG_SELECTED, IMG_NOTSELECTED, IMG_NOTSELECTED);
-
-    m_buttons[btn].SetOnSelectHandler([&](Ctrl_Spell* spell) {
-        DeselectAll();
-        spell->Select();
-    });
-    m_buttons[btn].SetOnReleaseHandler([&](Ctrl_Spell* spell) {
-        // Do nothing
-    });
-
-    m_buttons[btn].setPosition(posX, posY);
-    m_buttons[btn].setScaleX(1.5);
-    m_buttons[btn].setScaleY(1.5);
-
-    m_buttons[btn].SetSelectable(true);
-
-    append(&m_buttons[btn]);
-}
-
-void Page_Encounter_Golem::Init()
+Page_Encounter_Golem::Page_Encounter_Golem()
 {
     static const char* MagmaImages[] = {
       [IMG_NOTSELECTED] = "Magma",
@@ -82,19 +42,38 @@ void Page_Encounter_Golem::Init()
     InitSpell(Spell::Thunder, ThunderImages, 600, 0);
 }
 
-void Page_Encounter_Golem::process()
+Page_Encounter_Golem::~Page_Encounter_Golem()
 {
-    if (!m_initialized) {
-        Init();
-        m_initialized = true;
-    }
-
-    GuiFrame::process();
 }
 
-void Page_Encounter_Golem::Transition()
+void Page_Encounter_Golem::InitSpell(Spell spell, const char** images, int posX, int posY)
 {
-    m_nextPhase = Phase::End;
+    u32 btn = u32(spell);
+    assert(btn < SpellCount);
+
+    m_buttons[btn].Init("SpellButton", RES_ROOT "/Image/Encounter/Spell/Golem", images, 2);
+    m_buttons[btn].SetImages(IMG_SELECTED, IMG_NOTSELECTED, IMG_NOTSELECTED);
+
+    m_buttons[btn].SetOnHoverHandler([&](Ctrl_Spell* spell) {
+        DeselectAll();
+        spell->Hover();
+    });
+    m_buttons[btn].SetOnReleaseHandler([&](Ctrl_Spell* spell) {
+        // Do nothing
+    });
+
+    m_buttons[btn].setPosition(posX, posY);
+    m_buttons[btn].setScaleX(1.5);
+    m_buttons[btn].setScaleY(1.5);
+
+    m_buttons[btn].SetHoverable(true);
+
+    append(&m_buttons[btn]);
+}
+
+void Page_Encounter_Golem::TransitionSecond()
+{
+    m_nextPhase = Phase::Start;
     m_isInputPhase = false;
     ForceNextMovie();
 }
@@ -314,8 +293,8 @@ const char* Page_Encounter_Golem::NextMovie()
 
     // Disable all buttons
     for (u32 i = 0; i < SpellCount; i++) {
-        m_buttons[i].Deselect();
-        m_buttons[i].SetSelectable(m_isInputPhase);
+        m_buttons[i].Unhover();
+        m_buttons[i].SetHoverable(m_isInputPhase);
     }
 
     return m_phaseMoviePath;
@@ -335,7 +314,7 @@ void Page_Encounter_Golem::Cast(
     if (castMode == Wand::CastMode::WiiRemoteCastRune && curValid && m_isInputPhase &&
         (curX < 640 && curX > -640 && curY < 450 && curY > -450)) {
         for (u32 i = 0; i < SpellCount; i++) {
-            if (!m_buttons[i].IsSelectable()) {
+            if (!m_buttons[i].IsHoverable()) {
                 continue;
             }
 
@@ -343,7 +322,7 @@ void Page_Encounter_Golem::Cast(
             auto y = m_buttons[i].getCenterY();
             if (curX > x - 240 && curX < x + 240 && curY > y - 240 && curY < y + 240) {
                 DeselectAll();
-                m_buttons[i].Select();
+                m_buttons[i].Hover();
             }
         }
         return;
@@ -354,7 +333,7 @@ void Page_Encounter_Golem::Cast(
     }
 
     for (u32 i = 0; i < SpellCount; i++) {
-        if (!m_buttons[i].IsSelected())
+        if (!m_buttons[i].IsHoverable())
             continue;
 
         DeselectAll();
@@ -367,6 +346,6 @@ void Page_Encounter_Golem::Cast(
 void Page_Encounter_Golem::DeselectAll()
 {
     for (u32 i = 0; i < SpellCount; i++) {
-        m_buttons[i].Deselect();
+        m_buttons[i].Unhover();
     }
 }

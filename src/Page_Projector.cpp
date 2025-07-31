@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "Page_Projector.hpp"
-#include "AXManager.hpp"
+#include "AudioManager.hpp"
 #include "System.hpp"
 #include "Util.hpp"
 #include <cstdio>
@@ -78,31 +78,6 @@ void Page_Projector::ManaUpdate(u8 side, u8 value)
 
 void Page_Projector::process()
 {
-    static int voiceReset = -1;
-    static int voiceDown = -1;
-    if (!m_initialized) {
-        m_initialized = true;
-
-        auto ax = AXManager::s_instance;
-
-        voiceReset = ax->AcquireVoice(0x30000000, true, true, true, true, 48000, true, false);
-        assert(voiceReset != -1);
-
-        voiceDown = ax->AcquireVoice(0x30000000, true, true, true, true, 48000, true, false);
-        assert(voiceDown != -1);
-
-        u32 dataLen;
-        void* data = System::s_instance->RipFile(RES_ROOT "/Sound/ManaReset.pcm16", &dataLen);
-        assert(data != nullptr);
-
-        ax->PushBuffer(voiceReset, (u16*) data, dataLen / 2, false);
-
-        data = System::s_instance->RipFile(RES_ROOT "/Sound/ManaDown.pcm16", &dataLen);
-        assert(data != nullptr);
-
-        ax->PushBuffer(voiceDown, (u16*) data, dataLen / 2, false);
-    }
-
     m_movie.process();
 
     m_movieImg.setImageData(&m_movie);
@@ -114,15 +89,13 @@ void Page_Projector::process()
     Lock lock(m_mutex);
 
     if (m_manaSound != ManaSound::None) {
-        AXManager::s_instance->Stop(voiceReset);
-        AXManager::s_instance->Stop(voiceDown);
+        m_soundManaReset.Stop();
+        m_soundManaDown.Stop();
 
         if (m_manaSound == ManaSound::ManaReset) {
-            AXManager::s_instance->Restart(voiceReset);
-            AXManager::s_instance->Start(voiceReset);
+            m_soundManaReset.Play();
         } else if (m_manaSound == ManaSound::ManaDown) {
-            AXManager::s_instance->Restart(voiceDown);
-            AXManager::s_instance->Start(voiceDown);
+            m_soundManaDown.Play();
         }
 
         m_manaSound = ManaSound::None;

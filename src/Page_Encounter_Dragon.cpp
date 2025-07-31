@@ -4,8 +4,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "Page_Encounter_Dragon.hpp"
+#include "AudioFileOpus.hpp"
 #include "Config.hpp"
 #include <cstdlib>
+#include <new>
 
 enum {
     IMG_NOTSELECTED = 0,
@@ -13,33 +15,7 @@ enum {
     IMG_DISABLED = 2,
 };
 
-void Page_Encounter_Dragon::InitSpell(Spell spell, const char* const* images, int posX, int posY)
-{
-    u32 btn = u32(spell);
-    assert(btn < SpellCount);
-
-    m_buttons[btn].Init("SpellButton", RES_ROOT "/Image/Encounter/Spell/Common", images, 3);
-    m_buttons[btn].SetImages(IMG_SELECTED, IMG_NOTSELECTED, IMG_DISABLED);
-
-    m_buttons[btn].SetOnSelectHandler([&](Ctrl_Spell* spell) {
-        DeselectAll();
-        spell->Select();
-    });
-    m_buttons[btn].SetOnReleaseHandler([&](Ctrl_Spell* spell) {
-        // Do nothing
-    });
-
-    m_buttons[btn].setPosition(posX, posY);
-    float height = m_buttons[btn].GetImage(0).getHeight();
-    m_buttons[btn].setScaleX(280 / height);
-    m_buttons[btn].setScaleY(280 / height);
-
-    m_buttons[btn].SetSelectable(false);
-
-    append(&m_buttons[btn]);
-}
-
-void Page_Encounter_Dragon::Init()
+Page_Encounter_Dragon::Page_Encounter_Dragon()
 {
     using StringArray = const char* const[];
 
@@ -82,25 +58,52 @@ void Page_Encounter_Dragon::Init()
     float height = m_imgMq.GetImage(0).getHeight();
     m_imgMq.setScaleX(250 / height);
     m_imgMq.setScaleY(250 / height);
-    m_imgMq.SetSelectable(false);
-    m_imgMq.Select();
+    m_imgMq.SetHoverable(false);
+    m_imgMq.Hover();
     append(&m_imgMq);
 }
 
-void Page_Encounter_Dragon::process()
+void Page_Encounter_Dragon::InitSpell(Spell spell, const char* const* images, int posX, int posY)
 {
-    if (!m_initialized) {
-        Init();
-        m_initialized = true;
-    }
+    u32 btn = u32(spell);
+    assert(btn < SpellCount);
 
-    GuiFrame::process();
+    m_buttons[btn].Init("SpellButton", RES_ROOT "/Image/Encounter/Spell/Common", images, 3);
+    m_buttons[btn].SetImages(IMG_SELECTED, IMG_NOTSELECTED, IMG_DISABLED);
+
+    m_buttons[btn].SetOnHoverHandler([&](Ctrl_Spell* spell) {
+        DeselectAll();
+        spell->Hover();
+    });
+    m_buttons[btn].SetOnReleaseHandler([&](Ctrl_Spell* spell) {
+        // Do nothing
+    });
+
+    m_buttons[btn].setPosition(posX, posY);
+    float height = m_buttons[btn].GetImage(0).getHeight();
+    m_buttons[btn].setScaleX(280 / height);
+    m_buttons[btn].setScaleY(280 / height);
+
+    m_buttons[btn].SetHoverable(false);
+
+    append(&m_buttons[btn]);
 }
 
-void Page_Encounter_Dragon::Transition()
+void Page_Encounter_Dragon::TransitionFirst()
 {
     m_nextPhase = Phase::End;
     ForceNextMovie();
+
+    if (GetEncounterType() == Encounter::Type::Dragon) {
+        new (&m_enterSound) AudioFileOpus("EnterDragonLair", true, true, true, true);
+    }
+}
+
+void Page_Encounter_Dragon::TransitionSecond()
+{
+    if (GetEncounterType() == Encounter::Type::Dragon) {
+        m_enterSound.Play();
+    }
 }
 
 const char* Page_Encounter_Dragon::NextPhase()
@@ -112,9 +115,9 @@ const char* Page_Encounter_Dragon::NextPhase()
         m_nextPhase = Phase::Idle;
         SetMana(0, 0);
         SetMana(1, 0);
-        m_imgMq.Select();
+        m_imgMq.Hover();
         for (u32 i = 0; i < SpellCount; i++) {
-            m_buttons[i].SetSelectable(false);
+            m_buttons[i].SetHoverable(false);
         }
         // Fall through
 
@@ -136,16 +139,16 @@ const char* Page_Encounter_Dragon::NextPhase()
         if (GetMana(0) == 0) {
             // Lose
             m_nextPhase = Phase::End;
-            m_buttons[u32(Spell::Protection)].SetSelectable(false);
-            m_buttons[u32(Spell::Freeze)].SetSelectable(false);
-            m_buttons[u32(Spell::IceArrow)].SetSelectable(false);
+            m_buttons[u32(Spell::Protection)].SetHoverable(false);
+            m_buttons[u32(Spell::Freeze)].SetHoverable(false);
+            m_buttons[u32(Spell::IceArrow)].SetHoverable(false);
             return "Dragon0010A";
         }
 
         // Reset every spell
-        m_buttons[u32(Spell::Protection)].SetSelectable(true);
-        m_buttons[u32(Spell::Freeze)].SetSelectable(true);
-        m_buttons[u32(Spell::IceArrow)].SetSelectable(true);
+        m_buttons[u32(Spell::Protection)].SetHoverable(true);
+        m_buttons[u32(Spell::Freeze)].SetHoverable(true);
+        m_buttons[u32(Spell::IceArrow)].SetHoverable(true);
         m_allowProtection = true;
         m_allowFreeze = false;
         m_allowIceArrow = false;
@@ -184,9 +187,9 @@ const char* Page_Encounter_Dragon::NextPhase()
             m_allowFreeze = false;
             m_allowIceArrow = false;
             m_allowProtection = false;
-            m_buttons[u32(Spell::Protection)].SetSelectable(false);
-            m_buttons[u32(Spell::Freeze)].SetSelectable(false);
-            m_buttons[u32(Spell::IceArrow)].SetSelectable(false);
+            m_buttons[u32(Spell::Protection)].SetHoverable(false);
+            m_buttons[u32(Spell::Freeze)].SetHoverable(false);
+            m_buttons[u32(Spell::IceArrow)].SetHoverable(false);
             DeselectAll();
 
             if (m_dragonHitCount == 0) {
@@ -209,9 +212,9 @@ const char* Page_Encounter_Dragon::NextPhase()
             if (GetMana(1) == 0) {
                 // Win
                 m_nextPhase = Phase::End;
-                m_buttons[u32(Spell::Protection)].SetSelectable(false);
-                m_buttons[u32(Spell::Freeze)].SetSelectable(false);
-                m_buttons[u32(Spell::IceArrow)].SetSelectable(false);
+                m_buttons[u32(Spell::Protection)].SetHoverable(false);
+                m_buttons[u32(Spell::Freeze)].SetHoverable(false);
+                m_buttons[u32(Spell::IceArrow)].SetHoverable(false);
                 DeselectAll();
 
                 return "Dragon0020";
@@ -231,9 +234,9 @@ const char* Page_Encounter_Dragon::NextPhase()
             m_allowFreeze = false;
             m_allowIceArrow = false;
             m_allowProtection = false;
-            m_buttons[u32(Spell::Protection)].SetSelectable(false);
-            m_buttons[u32(Spell::Freeze)].SetSelectable(false);
-            m_buttons[u32(Spell::IceArrow)].SetSelectable(false);
+            m_buttons[u32(Spell::Protection)].SetHoverable(false);
+            m_buttons[u32(Spell::Freeze)].SetHoverable(false);
+            m_buttons[u32(Spell::IceArrow)].SetHoverable(false);
             DeselectAll();
 
             if (m_dragonHitCount == 0) {
@@ -282,7 +285,7 @@ void Page_Encounter_Dragon::NextFrame(u32 frame)
         // 15 seemingly
         if (frame == 8 * 30 && m_dragonHitCount >= 1) {
             m_allowProtection = false;
-            m_buttons[u32(Spell::Protection)].SetSelectable(false);
+            m_buttons[u32(Spell::Protection)].SetHoverable(false);
         }
     }
 }
@@ -296,7 +299,7 @@ void Page_Encounter_Dragon::Cast(
         SetMana(0, 16);
         SetMana(1, 16);
         DeselectAll();
-        m_imgMq.Deselect();
+        m_imgMq.Unhover();
         m_nextPhase = Phase::Start;
 
         // Prepare input for the next phase immediately
@@ -304,21 +307,22 @@ void Page_Encounter_Dragon::Cast(
         m_allowIceArrow = false;
         m_allowProtection = true;
         m_allowReveal = false;
-        m_buttons[u32(Spell::Protection)].SetSelectable(true);
-        m_buttons[u32(Spell::Freeze)].SetSelectable(true);
-        m_buttons[u32(Spell::IceArrow)].SetSelectable(true);
-        m_buttons[u32(Spell::Reveal)].SetSelectable(GetEncounterType() != Encounter::Type::Dragon);
+        m_buttons[u32(Spell::Protection)].SetHoverable(true);
+        m_buttons[u32(Spell::Freeze)].SetHoverable(true);
+        m_buttons[u32(Spell::IceArrow)].SetHoverable(true);
+        m_buttons[u32(Spell::Reveal)].SetHoverable(GetEncounterType() != Encounter::Type::Dragon);
         m_castProtection = false;
         m_castFreeze = false;
         m_castIceArrow = false;
         m_castReveal = false;
+        ForceNextMovie();
         return;
     }
 
     if (castMode == Wand::CastMode::WiiRemoteCastRune && curValid &&
         (curX < 640 && curX > -640 && curY < 450 && curY > -450)) {
         for (u32 i = 0; i < SpellCount; i++) {
-            if (!m_buttons[i].IsSelectable()) {
+            if (!m_buttons[i].IsHoverable()) {
                 continue;
             }
 
@@ -326,36 +330,36 @@ void Page_Encounter_Dragon::Cast(
             auto y = m_buttons[i].getCenterY();
             if (curX > x - 240 && curX < x + 240 && curY > y - 240 && curY < y + 240) {
                 DeselectAll();
-                m_buttons[i].Select();
+                m_buttons[i].Hover();
             }
         }
         return;
     }
 
-    if (m_buttons[u32(Spell::Protection)].IsSelected()) {
+    if (m_buttons[u32(Spell::Protection)].IsHovered()) {
         if (!m_allowProtection) {
             return;
         }
         m_castProtection = true;
-        m_buttons[u32(Spell::Protection)].SetSelectable(false);
-    } else if (m_buttons[u32(Spell::Freeze)].IsSelected()) {
+        m_buttons[u32(Spell::Protection)].SetHoverable(false);
+    } else if (m_buttons[u32(Spell::Freeze)].IsHovered()) {
         if (!m_allowFreeze) {
             return;
         }
         m_castFreeze = true;
-        m_buttons[u32(Spell::Freeze)].SetSelectable(false);
-    } else if (m_buttons[u32(Spell::IceArrow)].IsSelected()) {
+        m_buttons[u32(Spell::Freeze)].SetHoverable(false);
+    } else if (m_buttons[u32(Spell::IceArrow)].IsHovered()) {
         if (!m_allowIceArrow) {
             return;
         }
         m_castIceArrow = true;
-        m_buttons[u32(Spell::IceArrow)].SetSelectable(false);
-    } else if (m_buttons[u32(Spell::Reveal)].IsSelected()) {
+        m_buttons[u32(Spell::IceArrow)].SetHoverable(false);
+    } else if (m_buttons[u32(Spell::Reveal)].IsHovered()) {
         if (!m_allowReveal) {
             return;
         }
         m_castReveal = true;
-        m_buttons[u32(Spell::Reveal)].SetSelectable(false);
+        m_buttons[u32(Spell::Reveal)].SetHoverable(false);
     } else {
         // No spell selected
         return;
@@ -367,8 +371,8 @@ void Page_Encounter_Dragon::Cast(
 void Page_Encounter_Dragon::DeselectAll()
 {
     for (u32 i = 0; i < SpellCount; i++) {
-        if (m_buttons[i].IsSelected()) {
-            m_buttons[i].Deselect();
+        if (m_buttons[i].IsHoverable()) {
+            m_buttons[i].Unhover();
         }
     }
 }

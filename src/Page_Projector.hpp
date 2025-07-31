@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "AudioFileOpus.hpp"
 #include "Ctrl_Movie.hpp"
 #include "Encounter.hpp"
 #include <gui/GuiFrame.h>
@@ -51,6 +52,9 @@ protected:
         ManaReset,
     };
     ManaSound m_manaSound;
+
+    AudioFileOpus m_soundManaDown{"ManaDown", true, true, true, true};
+    AudioFileOpus m_soundManaReset{"ManaReset", true, true, true, true};
 
     Encounter* m_encounter = nullptr;
 };
