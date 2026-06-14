@@ -23,7 +23,7 @@
 #include <gui/video/shaders/Shader3D.h>
 #include <gui/video/shaders/ShaderFractalColor.h>
 #include <gui/video/shaders/Texture2DShader.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <string.h>
 
 CVideo::CVideo(int32_t forceTvScanMode, int32_t forceDrcScanMode) {

@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 #include <cstdint>
-#include <malloc.h>
+#include <stdlib.h>
 
 void libgui_memoryInitialize(void);
 

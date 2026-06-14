@@ -17,7 +17,7 @@
 
 #include <gui/GuiImageData.h>
 #include <gui/memory.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -147,7 +147,7 @@ void GuiImageData::loadImage(const uint8_t *img, int32_t imgSize, GX2TexClampMod
 
     //! allocate memory for the surface
     memoryType             = eMemTypeMEM2;
-    texture->surface.image = memalign(texture->surface.alignment, texture->surface.imageSize);
+    texture->surface.image = aligned_alloc(texture->surface.alignment, texture->surface.imageSize);
     //! try MEM1 on failure
     if (!texture->surface.image) {
         memoryType             = eMemTypeMEM1;

@@ -4,6 +4,11 @@
 -I/opt/devkitpro/devkitPPC/powerpc-eabi/include/c++/14.2.0/backward
 -I/opt/devkitpro/devkitPPC/lib/gcc/powerpc-eabi/14.2.0/include
 -I/opt/devkitpro/devkitPPC/lib/gcc/powerpc-eabi/14.2.0/include-fixed
+-I/opt/devkitpro/devkitPPC/powerpc-eabi/include/c++/15.1.0
+-I/opt/devkitpro/devkitPPC/powerpc-eabi/include/c++/15.1.0/powerpc-eabi
+-I/opt/devkitpro/devkitPPC/powerpc-eabi/include/c++/15.1.0/backward
+-I/opt/devkitpro/devkitPPC/lib/gcc/powerpc-eabi/15.1.0/include
+-I/opt/devkitpro/devkitPPC/lib/gcc/powerpc-eabi/15.1.0/include-fixed
 -I/opt/devkitpro/devkitPPC/powerpc-eabi/include
 -I/opt/devkitpro/wut/include
 -I/opt/devkitpro/libogc/include
@@ -16,9 +21,13 @@
 -nostdinc
 -nostdinc++
 -Wpedantic
+-Wall
 -Wno-zero-length-array
 -Wno-unknown-attributes
 -Wno-embedded-directive
+-Wno-c99-designator
+-Wno-deprecated-builtins
+-Wsign-compare
 -std=c++23
 -x
 c++

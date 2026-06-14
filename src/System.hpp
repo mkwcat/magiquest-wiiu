@@ -13,7 +13,6 @@
 #include <gui/GuiImageData.h>
 #include <gui/VPadController.h>
 #include <gui/system/CThread.h>
-#include <vector>
 
 class CVideo;
 
@@ -213,7 +212,9 @@ protected:
     u32 m_frameId = 0;
 };
 
-static inline System* sys()
+inline System* sys()
 {
     return System::s_instance;
 }
+
+ENUM_ALLOW_PROMOTION(System::PageID);

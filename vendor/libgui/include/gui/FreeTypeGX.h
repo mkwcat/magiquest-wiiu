@@ -27,7 +27,7 @@
 #include FT_FREETYPE_H
 #include FT_BITMAP_H
 
-#include <malloc.h>
+#include <stdlib.h>
 #include <map>
 #include <mutex>
 #include <string.h>
@@ -94,7 +94,7 @@ typedef struct ftgxDataOffset_ ftgxDataOffset;
 #define FTGX_STYLE_MASK         0xf000
 
 /**< Constant color value used only to sanitize Doxygen documentation. */
-static const GX2ColorF32 ftgxWhite = (GX2ColorF32){
+static const GX2ColorF32 ftgxWhite = (GX2ColorF32) {
         1.0f, 1.0f, 1.0f, 1.0f};
 
 

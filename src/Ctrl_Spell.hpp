@@ -7,7 +7,6 @@
 
 #include "Ctrl_Image.hpp"
 #include <cstring>
-#include <gctypes.h>
 #include <gui/GuiButton.h>
 #include <vector>
 
@@ -28,25 +27,25 @@ public:
     {
     }
 
-    void Init(const char* name, const char* root, const char* const* images, u32 imageCount)
+    void Init(const char* name, const char* root, const char* const* images, unsigned imageCount)
     {
-        assert(strlen(name) < 32);
-        strcpy(m_name, name);
+        assert(std::strlen(name) < 32);
+        std::strcpy(m_name, name);
 
         // Construct loop
-        for (u32 i = 0; i < imageCount; i++) {
+        for (unsigned i = 0; i < imageCount; i++) {
             m_images.push_back(Ctrl_Image());
         }
 
         // Init loop
-        for (u32 i = 0; i < imageCount; i++) {
+        for (unsigned i = 0; i < imageCount; i++) {
             char path[256];
-            snprintf(path, sizeof(path), "%s/%s.png", root, images[i]);
+            std::snprintf(path, sizeof(path), "%s/%s.png", root, images[i]);
             m_images[i].Load(path);
         }
     }
 
-    void SetImages(u32 hoveredImg, u32 notHoveredImg, u32 disabledImg)
+    void SetImages(unsigned hoveredImg, unsigned notHoveredImg, unsigned disabledImg)
     {
         assert(hoveredImg < m_images.size());
         assert(notHoveredImg < m_images.size());
@@ -132,13 +131,13 @@ public:
         m_onReleaseHandler(this);
     }
 
-    Ctrl_Image& GetImage(u32 index)
+    Ctrl_Image& GetImage(unsigned index)
     {
         assert(index < m_images.size());
         return m_images[index];
     }
 
-    void SetImage(u32 index)
+    void SetImage(unsigned index)
     {
         assert(index < m_images.size());
         m_currentImg = index;
@@ -153,10 +152,10 @@ private:
 
     GuiTrigger m_touchTrigger{GuiTrigger::CHANNEL_1, GuiTrigger::VPAD_TOUCH};
 
-    u32 m_hoveredImg;
-    u32 m_notHoveredImg;
-    u32 m_disabledImg;
-    u32 m_currentImg = 0;
+    unsigned m_hoveredImg;
+    unsigned m_notHoveredImg;
+    unsigned m_disabledImg;
+    unsigned m_currentImg = 0;
 
     std::function<void(Ctrl_Spell*)> m_onHoverHandler;
     std::function<void(Ctrl_Spell*)> m_onReleaseHandler;

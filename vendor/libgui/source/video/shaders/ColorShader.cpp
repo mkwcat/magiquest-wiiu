@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 #include <gui/video/shaders/ColorShader.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <string.h>
 
 static const uint32_t cpVertexShaderProgram[] = {
@@ -140,7 +140,7 @@ ColorShader::ColorShader()
     fetchShader = new FetchShader(vertexShader.getAttributeBuffer(), vertexShader.getAttributesCount());
 
     //! model vertex has to be align and cannot be in unknown regions for GX2 like 0xBCAE1000
-    positionVtxs = (float *) memalign(GX2_VERTEX_BUFFER_ALIGNMENT, cuPositionVtxsSize);
+    positionVtxs = (float *) aligned_alloc(GX2_VERTEX_BUFFER_ALIGNMENT, cuPositionVtxsSize);
     if (positionVtxs) {
         //! position vertex structure
         int32_t i         = 0;

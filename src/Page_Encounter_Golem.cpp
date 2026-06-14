@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "Page_Encounter_Golem.hpp"
-#include <cstdlib>
+#include <cstring>
 
 enum {
     IMG_NOTSELECTED = 0,
@@ -48,27 +48,26 @@ Page_Encounter_Golem::~Page_Encounter_Golem()
 
 void Page_Encounter_Golem::InitSpell(Spell spell, const char** images, int posX, int posY)
 {
-    u32 btn = u32(spell);
-    assert(btn < SpellCount);
+    assert(+spell < SpellCount);
 
-    m_buttons[btn].Init("SpellButton", RES_ROOT "/Image/Encounter/Spell/Golem", images, 2);
-    m_buttons[btn].SetImages(IMG_SELECTED, IMG_NOTSELECTED, IMG_NOTSELECTED);
+    m_buttons[+spell].Init("SpellButton", RES_ROOT "/Image/Encounter/Spell/Golem", images, 2);
+    m_buttons[+spell].SetImages(IMG_SELECTED, IMG_NOTSELECTED, IMG_NOTSELECTED);
 
-    m_buttons[btn].SetOnHoverHandler([&](Ctrl_Spell* spell) {
+    m_buttons[+spell].SetOnHoverHandler([&](Ctrl_Spell* spell) {
         DeselectAll();
         spell->Hover();
     });
-    m_buttons[btn].SetOnReleaseHandler([&](Ctrl_Spell* spell) {
+    m_buttons[+spell].SetOnReleaseHandler([&](Ctrl_Spell* spell) {
         // Do nothing
     });
 
-    m_buttons[btn].setPosition(posX, posY);
-    m_buttons[btn].setScaleX(1.5);
-    m_buttons[btn].setScaleY(1.5);
+    m_buttons[+spell].setPosition(posX, posY);
+    m_buttons[+spell].setScaleX(1.5);
+    m_buttons[+spell].setScaleY(1.5);
 
-    m_buttons[btn].SetHoverable(true);
+    m_buttons[+spell].SetHoverable(true);
 
-    append(&m_buttons[btn]);
+    append(&m_buttons[+spell]);
 }
 
 void Page_Encounter_Golem::TransitionSecond()
@@ -232,7 +231,7 @@ const char* Page_Encounter_Golem::NextPhase(Spell castSpell)
         switch (castSpell) {
         case Spell::Chisel:
             // The correct option
-            SetMana(1, std::max(int(GetMana(1)) - 6, 0));
+            SetMana(1, std::max(static_cast<int>(GetMana(1)) - 6, 0));
             m_isInputPhase = true;
             m_nextPhase = Phase::Phase4Start;
             switch (GetMana(1)) {
@@ -282,13 +281,15 @@ const char* Page_Encounter_Golem::NextMovie()
 
     m_currentPhase = m_nextPhase;
 
-    auto name = NextPhase(castSpell);
+    const char* const name = NextPhase(castSpell);
 
     if (name == nullptr) {
         // Default to the web portal idle screen
-        strcpy(m_phaseMoviePath, RES_ROOT "/Movie/SilverDragon/InternetPortalwTextandGameplay.mp4");
+        std::strcpy(
+          m_phaseMoviePath, RES_ROOT "/Movie/SilverDragon/InternetPortalwTextandGameplay.mp4");
     } else {
-        snprintf(m_phaseMoviePath, sizeof(m_phaseMoviePath), RES_ROOT "/Movie/Golem/%s.mp4", name);
+        std::snprintf(
+          m_phaseMoviePath, sizeof m_phaseMoviePath, RES_ROOT "/Movie/Golem/%s.mp4", name);
     }
 
     // Disable all buttons
@@ -333,8 +334,9 @@ void Page_Encounter_Golem::Cast(
     }
 
     for (u32 i = 0; i < SpellCount; i++) {
-        if (!m_buttons[i].IsHoverable())
+        if (!m_buttons[i].IsHovered()) {
             continue;
+        }
 
         DeselectAll();
         m_castSpell = Spell(i);

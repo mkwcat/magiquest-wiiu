@@ -39,7 +39,7 @@ public:
         holdable = true;
         clickable = true;
 
-        m_image.setSize(float(m_image.getWidth()) / float(m_image.getHeight()) * 180.0, 180.0);
+        m_image.setImageSize(float(m_image.getWidth()) / float(m_image.getHeight()) * 180.0, 180.0);
 
         switch (type) {
         case Type::LeftBack:

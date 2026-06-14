@@ -37,7 +37,7 @@ GuiImage::GuiImage(int32_t w, int32_t h, const GX2Color &c, int32_t type) {
     imgType    = type;
     colorCount = ColorShader::cuColorVtxsSize / ColorShader::cuColorAttrSize;
 
-    colorVtxs = (uint8_t *) memalign(GX2_VERTEX_BUFFER_ALIGNMENT, colorCount * ColorShader::cuColorAttrSize);
+    colorVtxs = (uint8_t *) aligned_alloc(GX2_VERTEX_BUFFER_ALIGNMENT, colorCount * ColorShader::cuColorAttrSize);
     if (colorVtxs) {
         for (uint32_t i = 0; i < colorCount; i++) {
             setImageColor(c, i);
@@ -53,7 +53,7 @@ GuiImage::GuiImage(int32_t w, int32_t h, const GX2Color *c, uint32_t color_count
         colorCount = color_count;
     }
 
-    colorVtxs = (uint8_t *) memalign(GX2_VERTEX_BUFFER_ALIGNMENT, colorCount * ColorShader::cuColorAttrSize);
+    colorVtxs = (uint8_t *) aligned_alloc(GX2_VERTEX_BUFFER_ALIGNMENT, colorCount * ColorShader::cuColorAttrSize);
     if (colorVtxs) {
         for (uint32_t i = 0; i < colorCount; i++) {
             // take the last as reference if not enough colors defined
@@ -157,7 +157,7 @@ void GuiImage::setImageColor(const GX2Color &c, int32_t idx) {
     }
 }
 
-void GuiImage::setSize(int32_t w, int32_t h) {
+void GuiImage::setImageSize(int32_t w, int32_t h) {
     width  = w;
     height = h;
 }
@@ -169,7 +169,7 @@ void GuiImage::setPrimitiveVertex(int32_t prim, const float *posVtx, const float
     texCoords = texCoord;
 
     if (imgType == IMAGE_COLOR) {
-        uint8_t *newColorVtxs = (uint8_t *) memalign(0x40, ColorShader::cuColorAttrSize * vtxCount);
+        uint8_t *newColorVtxs = (uint8_t *) aligned_alloc(0x40, ColorShader::cuColorAttrSize * vtxCount);
 
         for (uint32_t i = 0; i < vtxCount; i++) {
             int32_t newColorIdx = (i << 2);

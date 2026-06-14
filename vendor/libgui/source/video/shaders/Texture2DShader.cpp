@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 #include <gui/video/shaders/Texture2DShader.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <string.h>
 
 static const uint32_t cpVertexShaderProgram[] = {
@@ -234,8 +234,8 @@ Texture2DShader::Texture2DShader()
     fetchShader = new FetchShader(vertexShader.getAttributeBuffer(), vertexShader.getAttributesCount());
 
     //! model vertex has to be align and cannot be in unknown regions for GX2 like 0xBCAE1000
-    posVtxs   = (float *) memalign(GX2_VERTEX_BUFFER_ALIGNMENT, ciPositionVtxsSize);
-    texCoords = (float *) memalign(GX2_VERTEX_BUFFER_ALIGNMENT, ciTexCoordsVtxsSize);
+    posVtxs   = (float *) aligned_alloc(GX2_VERTEX_BUFFER_ALIGNMENT, ciPositionVtxsSize);
+    texCoords = (float *) aligned_alloc(GX2_VERTEX_BUFFER_ALIGNMENT, ciTexCoordsVtxsSize);
 
     //! defaults for normal square
     //! position vertex structure and texture coordinate vertex structure

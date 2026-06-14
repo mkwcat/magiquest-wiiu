@@ -47,7 +47,7 @@ void Page_CastTutorial::Init()
 
     m_imgCheck.Load(RES_ROOT "/Image/Menu/Button/WaxSealGreenCheck.png");
     m_imgCheck.setPosition(550, -280);
-    m_imgCheck.setSize(220, 220);
+    m_imgCheck.setImageSize(220, 220);
 
     append(&m_imgCheck);
 }

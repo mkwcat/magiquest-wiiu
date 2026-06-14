@@ -5,8 +5,6 @@
 
 #include "Page_Encounter_Xavier.hpp"
 #include "Ctrl_Mana.hpp"
-#include "Page_Background.hpp"
-#include <cstdlib>
 
 enum {
     IMG_NOTSELECTED = 0,
@@ -173,28 +171,26 @@ const char* Page_Encounter_Xavier::NextPhase(Spell castSpell)
 
         // Random sort of attack phases
         {
-            u32 numPhaseLeft = 0;
-            for (u32 i = 0; i < AttackPhaseCount; i++) {
+            unsigned numPhaseLeft = 0;
+            for (unsigned i = 0; i < AttackPhaseCount; i++) {
                 numPhaseLeft += m_doneAttackPhase[i] ? 0 : 1;
             }
-
-            u32 random;
 
             // Warrior has no retreat phase after it, so if it happens to be the
             // last attack phase then it won't even show up due to Xavier
             // already being out of mana. This check ensures that never happens.
-            if (numPhaseLeft <= 2 && !m_doneAttackPhase[u32(AttackPhase::Warrior)]) {
-                random = u32(AttackPhase::Warrior);
-            } else {
+            unsigned random = +AttackPhase::Warrior;
+            if (numPhaseLeft > 2 || m_doneAttackPhase[+AttackPhase::Warrior]) {
                 random = Random(numPhaseLeft);
-                for (u32 i = 0; i < AttackPhaseCount; i++) {
+                for (unsigned i = 0; i < AttackPhaseCount; i++) {
                     random += m_doneAttackPhase[i] ? 1 : 0;
-                    if (random == i)
+                    if (random == i) {
                         break;
+                    }
                 }
             }
 
-            m_attackPhase = AttackPhase(random);
+            m_attackPhase = static_cast<AttackPhase>(random);
             m_doneAttackPhase[random] = true;
         }
 
@@ -342,12 +338,12 @@ const char* Page_Encounter_Xavier::NextMovie()
     m_currentPhase = m_nextPhase;
 
     if (m_isInputPhase && castSpell != Spell::None && castSpell != Spell::Warrior) {
-        m_buttonUses[int(castSpell)]++;
+        m_buttonUses[+castSpell]++;
     }
 
-    auto name = NextPhase(castSpell);
+    const char* const name = NextPhase(castSpell);
     assert(!!name);
-    snprintf(m_phaseMoviePath, sizeof(m_phaseMoviePath), RES_ROOT "/Movie/Xavier/%s.mp4", name);
+    std::snprintf(m_phaseMoviePath, sizeof m_phaseMoviePath, RES_ROOT "/Movie/Xavier/%s.mp4", name);
 
     // Disable all buttons
     for (u32 i = 0; i < SpellCount; i++) {
@@ -373,8 +369,9 @@ const char* Page_Encounter_Xavier::NextMovie()
 
 void Page_Encounter_Xavier::NextFrame(u32 frame)
 {
-    if (m_nextPhase != Phase::Retreat)
+    if (m_nextPhase != Phase::Retreat) {
         return;
+    }
 
     if (m_castSpell != Spell::None && m_castSpell != Spell::Warrior) {
         // Hardcoded ending frames for when Xavier is not on screen
@@ -421,7 +418,7 @@ void Page_Encounter_Xavier::Cast(
     }
 
     for (u32 i = 0; i < SpellCount; i++) {
-        if (!m_buttons[i].IsHoverable()) {
+        if (!m_buttons[i].IsHovered()) {
             continue;
         }
 
@@ -450,7 +447,7 @@ void Page_Encounter_Xavier::Cast(
             m_buttons[i].SetImages(IMG_HALF_SELECTED, IMG_HALF_CASTED, IMG_HALF_NOTSELECTED);
             break;
         }
-        m_castSpell = Spell(i);
+        m_castSpell = static_cast<Spell>(i);
     }
 }
 

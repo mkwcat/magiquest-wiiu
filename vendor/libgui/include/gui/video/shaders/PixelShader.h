@@ -22,7 +22,7 @@
 class PixelShader : public Shader {
 public:
     PixelShader()
-        : pixelShader((GX2PixelShader *) memalign(0x40, sizeof(GX2PixelShader))) {
+        : pixelShader((GX2PixelShader *) aligned_alloc(0x40, sizeof(GX2PixelShader))) {
         if (pixelShader) {
             memset(pixelShader, 0, sizeof(GX2PixelShader));
             pixelShader->mode = GX2_SHADER_MODE_UNIFORM_REGISTER;
@@ -78,7 +78,7 @@ public:
 
         //! this must be moved into an area where the graphic engine has access to and must be aligned to 0x100
         pixelShader->size    = programSize;
-        pixelShader->program = (uint8_t *) memalign(GX2_SHADER_PROGRAM_ALIGNMENT, pixelShader->size);
+        pixelShader->program = (uint8_t *) aligned_alloc(GX2_SHADER_PROGRAM_ALIGNMENT, pixelShader->size);
         if (pixelShader->program) {
             memcpy(pixelShader->program, program, pixelShader->size);
             GX2Invalidate(GX2_INVALIDATE_MODE_CPU_SHADER, pixelShader->program, pixelShader->size);

@@ -39,8 +39,8 @@ GuiParticleImage::GuiParticleImage(int32_t w, int32_t h, uint32_t particleCount,
     this->minSpeed  = minSpeed;
     this->maxSpeed  = maxSpeed;
 
-    posVertexs   = (float *) memalign(GX2_VERTEX_BUFFER_ALIGNMENT, ColorShader::cuVertexAttrSize * CIRCLE_VERTEX_COUNT);
-    colorVertexs = (uint8_t *) memalign(GX2_VERTEX_BUFFER_ALIGNMENT, ColorShader::cuColorAttrSize * CIRCLE_VERTEX_COUNT);
+    posVertexs   = (float *) aligned_alloc(GX2_VERTEX_BUFFER_ALIGNMENT, ColorShader::cuVertexAttrSize * CIRCLE_VERTEX_COUNT);
+    colorVertexs = (uint8_t *) aligned_alloc(GX2_VERTEX_BUFFER_ALIGNMENT, ColorShader::cuColorAttrSize * CIRCLE_VERTEX_COUNT);
 
     for (uint32_t i = 0; i < CIRCLE_VERTEX_COUNT; i++) {
         posVertexs[i * 3 + 0] = cosf(DegToRad(i * 360.0f / CIRCLE_VERTEX_COUNT));

@@ -283,7 +283,7 @@ uint16_t FreeTypeGX::cacheGlyphDataComplete(int16_t pixelSize) {
  */
 
 bool FreeTypeGX::loadGlyphData(FT_Bitmap *bmp, ftgxCharData *charData) {
-    charData->texture->surface.image = (uint8_t *) memalign(charData->texture->surface.alignment, charData->texture->surface.imageSize);
+    charData->texture->surface.image = (uint8_t *) aligned_alloc(charData->texture->surface.alignment, charData->texture->surface.imageSize);
     if (!charData->texture->surface.image) {
         return false;
     }

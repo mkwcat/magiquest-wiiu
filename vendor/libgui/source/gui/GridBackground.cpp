@@ -15,8 +15,8 @@ GridBackground::GridBackground(GuiImageData *img)
     vtxCount = 4;
 
     //! texture and vertex coordinates
-    float *m_posVtxs   = (float *) memalign(GX2_VERTEX_BUFFER_ALIGNMENT, vtxCount * Shader3D::cuVertexAttrSize);
-    float *m_texCoords = (float *) memalign(GX2_VERTEX_BUFFER_ALIGNMENT, vtxCount * Shader3D::cuTexCoordAttrSize);
+    float *m_posVtxs   = (float *) aligned_alloc(GX2_VERTEX_BUFFER_ALIGNMENT, vtxCount * Shader3D::cuVertexAttrSize);
+    float *m_texCoords = (float *) aligned_alloc(GX2_VERTEX_BUFFER_ALIGNMENT, vtxCount * Shader3D::cuTexCoordAttrSize);
 
     if (m_posVtxs) {
         int32_t i      = 0;

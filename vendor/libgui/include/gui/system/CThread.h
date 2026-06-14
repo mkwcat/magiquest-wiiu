@@ -18,8 +18,8 @@
 #define CTHREAD_H_
 
 #include <coreinit/thread.h>
-#include <malloc.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 class CThread {
 public:
@@ -31,9 +31,9 @@ public:
         //! save attribute assignment
         iAttributes = iAttr;
         //! allocate the thread
-        pThread = (OSThread *) memalign(8, sizeof(OSThread));
+        pThread = (OSThread *) aligned_alloc(8, sizeof(OSThread));
         //! allocate the stack
-        pThreadStack = (uint8_t *) memalign(0x20, iStackSize);
+        pThreadStack = (uint8_t *) aligned_alloc(0x20, iStackSize);
         //! create the thread
         if (pThread && pThreadStack) {
             OSCreateThread(pThread, &CThread::threadCallback, 1, (char *) this, pThreadStack + iStackSize, iStackSize, iPriority, iAttributes);

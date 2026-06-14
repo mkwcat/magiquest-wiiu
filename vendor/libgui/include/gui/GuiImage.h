@@ -85,8 +85,8 @@ public:
     //!Change ImageColor
     void setImageColor(const GX2Color &c, int32_t idx = -1);
 
-    //!Change ImageColor
-    void setSize(int32_t w, int32_t h);
+    //!Change ImageSize
+    void setImageSize(int32_t w, int32_t h);
 
     void setPrimitiveVertex(int32_t prim, const float *pos, const float *tex, uint32_t count);
 

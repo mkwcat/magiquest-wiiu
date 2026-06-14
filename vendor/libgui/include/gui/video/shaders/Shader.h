@@ -24,7 +24,7 @@
 #include <gx2/mem.h>
 #include <gx2/registers.h>
 #include <gx2/shaders.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 class Shader {
 protected:

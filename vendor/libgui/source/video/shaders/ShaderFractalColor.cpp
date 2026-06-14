@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 #include <gui/video/shaders/ShaderFractalColor.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <string.h>
 
 static const uint32_t cpVertexShaderProgram[] = {
@@ -326,9 +326,9 @@ ShaderFractalColor::ShaderFractalColor()
 
     //! initialize default quad texture vertexes as those are very commonly used
     //! model vertex has to be align and cannot be in unknown regions for GX2 like 0xBCAE1000
-    posVtxs   = (float *) memalign(GX2_VERTEX_BUFFER_ALIGNMENT, ciPositionVtxsSize);
-    texCoords = (float *) memalign(GX2_VERTEX_BUFFER_ALIGNMENT, ciTexCoordsVtxsSize);
-    colorVtxs = (uint8_t *) memalign(GX2_VERTEX_BUFFER_ALIGNMENT, ciColorVtxsSize);
+    posVtxs   = (float *) aligned_alloc(GX2_VERTEX_BUFFER_ALIGNMENT, ciPositionVtxsSize);
+    texCoords = (float *) aligned_alloc(GX2_VERTEX_BUFFER_ALIGNMENT, ciTexCoordsVtxsSize);
+    colorVtxs = (uint8_t *) aligned_alloc(GX2_VERTEX_BUFFER_ALIGNMENT, ciColorVtxsSize);
 
     //! position vertex structure and texture coordinate vertex structure
     int32_t i    = 0;

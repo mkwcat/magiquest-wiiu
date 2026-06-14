@@ -17,7 +17,6 @@ class Page_Encounter_Xavier : public GuiFrame, public Encounter
 public:
     Page_Encounter_Xavier();
 
-private:
     enum class Spell {
         Warrior,
         Majestic,
@@ -127,3 +126,7 @@ protected:
 
     bool m_started = false;
 };
+
+ENUM_ALLOW_PROMOTION(Page_Encounter_Xavier::Spell);
+ENUM_ALLOW_PROMOTION(Page_Encounter_Xavier::Phase);
+ENUM_ALLOW_PROMOTION(Page_Encounter_Xavier::AttackPhase);

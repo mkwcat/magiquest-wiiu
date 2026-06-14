@@ -39,9 +39,15 @@ System::System()
   , m_video(new CVideo(GX2_TV_SCAN_MODE_1080P))
   , m_gamepad(GuiTrigger::CHANNEL_1)
   , m_imgCursor(nullptr)
-  , m_pages{// aggregate initialization of std::array
-      PageSetting{PageID::Movie}, {PageID::Background}, {PageID::SelectAdventureCategory},
-      {PageID::SelectAdventure}, {PageID::ModeSelect}, {PageID::CastTutorial}, {PageID::TouchDuel}}
+  , m_pages{
+      PageSetting{PageID::Movie},
+      {PageID::Background},
+      {PageID::SelectAdventureCategory},
+      {PageID::SelectAdventure},
+      {PageID::ModeSelect},
+      {PageID::CastTutorial},
+      {PageID::TouchDuel},
+    }
 {
     if (s_instance == nullptr) {
         s_instance = this;
@@ -57,13 +63,13 @@ System::System()
     ResourceManager::Init();
 
     // Construct page objects
-    m_pages[u32(PageID::Movie)].element = new Page_Projector();
-    m_pages[u32(PageID::Background)].element = new Page_Background();
-    m_pages[u32(PageID::SelectAdventureCategory)].element = new Page_SelectAdventureCategory();
-    m_pages[u32(PageID::SelectAdventure)].element = new Page_SelectAdventure();
-    m_pages[u32(PageID::ModeSelect)].element = new Page_ModeSelect();
-    m_pages[u32(PageID::CastTutorial)].element = new Page_CastTutorial();
-    m_pages[u32(PageID::TouchDuel)].element = new Page_TouchDuel();
+    m_pages[+PageID::Movie].element = new Page_Projector();
+    m_pages[+PageID::Background].element = new Page_Background();
+    m_pages[+PageID::SelectAdventureCategory].element = new Page_SelectAdventureCategory();
+    m_pages[+PageID::SelectAdventure].element = new Page_SelectAdventure();
+    m_pages[+PageID::ModeSelect].element = new Page_ModeSelect();
+    m_pages[+PageID::CastTutorial].element = new Page_CastTutorial();
+    m_pages[+PageID::TouchDuel].element = new Page_TouchDuel();
 
     m_imgCursorTimer = 0;
     m_frameId = 0;
@@ -211,11 +217,10 @@ bool System::IsAroma()
 
 void System::ShowPage(PageID page, Display display)
 {
-    assert(u32(page) < u32(PageID::PageCount));
-    auto set = &m_nextSetting[u32(page)];
+    assert(page < PageID::PageCount);
+    auto set = &m_nextSetting[+page];
 
-    LOG(LogSystem, "Showing page %d on display %d", static_cast<int>(page),
-      static_cast<int>(display));
+    LOG(LogSystem, "Showing page %d on display %d", +page, static_cast<int>(display));
 
     switch (display) {
     case Display::TV:
@@ -238,11 +243,10 @@ void System::ShowPage(PageID page, Display display)
 
 void System::HidePage(PageID page, Display display)
 {
-    assert(u32(page) < u32(PageID::PageCount));
-    auto set = &m_nextSetting[u32(page)];
+    assert(page < PageID::PageCount);
+    auto set = &m_nextSetting[+page];
 
-    LOG(LogSystem, "Hiding page %d from display %d", static_cast<int>(page),
-      static_cast<int>(display));
+    LOG(LogSystem, "Hiding page %d from display %d", +page, static_cast<int>(display));
 
     switch (display) {
     case Display::TV:
@@ -265,8 +269,8 @@ void System::HidePage(PageID page, Display display)
 
 GuiElement* System::GetPage(PageID page)
 {
-    assert(u32(page) < u32(PageID::PageCount));
-    return m_pages[u32(page)].element;
+    assert(page < PageID::PageCount);
+    return m_pages[+page].element;
 }
 
 bool System::Tick()
@@ -389,6 +393,9 @@ int main(int argc, char** argv)
         LOG(LogSystem, "Failed to find content directory");
         return EXIT_FAILURE;
     }
+
+    // Seed the random number generator
+    std::srand(OSGetTick());
 
     // Initialize GUI memory
     libgui_memoryInitialize();

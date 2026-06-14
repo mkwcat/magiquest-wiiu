@@ -70,10 +70,10 @@ void Page_SelectAdventure::RegisterAdventure(u32 index, int categoryIndex, const
     std::snprintf(path, sizeof(path), RES_ROOT "/Image/Menu/Button/Adventure/%s", imageName);
 
     m_adventures[index].banner.Load(path);
-    m_adventures[index].banner.setSize(300, 375);
+    m_adventures[index].banner.setImageSize(300, 375);
     m_adventures[index].button.setImage(&m_adventures[index].banner);
-    m_adventures[index].button.setPosition(
-      (categoryIndex % 3 - 1) * 400, (categoryIndex / 3) * -400 + 50);
+    int level = (categoryIndex / 3);
+    m_adventures[index].button.setPosition((categoryIndex % 3 - 1) * 400, level * -400 + 50);
     m_adventures[index].button.setTrigger(&m_touchTrigger);
     m_adventures[index].button.clicked.connect<Page_SelectAdventure>(
       this, &Page_SelectAdventure::OnSelect);

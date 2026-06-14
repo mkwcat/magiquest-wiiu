@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 #include <gui/video/shaders/FXAAShader.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <string.h>
 
 static const uint32_t cpVertexShaderProgram[] = {
@@ -190,8 +190,8 @@ FXAAShader::FXAAShader()
     fetchShader = new FetchShader(vertexShader.getAttributeBuffer(), vertexShader.getAttributesCount());
 
     //! model vertex has to be align and cannot be in unknown regions for GX2 like 0xBCAE1000
-    posVtxs   = (float *) memalign(GX2_VERTEX_BUFFER_ALIGNMENT, ciPositionVtxsSize);
-    texCoords = (float *) memalign(GX2_VERTEX_BUFFER_ALIGNMENT, ciTexCoordsVtxsSize);
+    posVtxs   = (float *) aligned_alloc(GX2_VERTEX_BUFFER_ALIGNMENT, ciPositionVtxsSize);
+    texCoords = (float *) aligned_alloc(GX2_VERTEX_BUFFER_ALIGNMENT, ciTexCoordsVtxsSize);
 
     //! position vertex structure and texture coordinate vertex structure
     int32_t i    = 0;

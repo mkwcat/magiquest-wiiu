@@ -8,12 +8,17 @@
 #include "Ctrl_Spell.hpp"
 #include "Encounter.hpp"
 #include "System.hpp"
+#include "Util.hpp"
 #include <gui/GuiButton.h>
 #include <gui/GuiFrame.h>
 #include <gui/GuiImage.h>
 
 class Page_Encounter_Golem : public GuiFrame, public Encounter
 {
+public:
+    Page_Encounter_Golem();
+    ~Page_Encounter_Golem();
+
     enum class Spell {
         Magma,
         Chisel,
@@ -22,7 +27,7 @@ class Page_Encounter_Golem : public GuiFrame, public Encounter
 
         None,
     };
-    static constexpr u32 SpellCount = u32(Spell::None);
+    static constexpr int SpellCount = static_cast<int>(Spell::None);
 
     enum class Phase {
         End,
@@ -37,10 +42,6 @@ class Page_Encounter_Golem : public GuiFrame, public Encounter
         Phase3Start,
         Phase4Start,
     };
-
-public:
-    Page_Encounter_Golem();
-    ~Page_Encounter_Golem();
 
 protected:
     Ctrl_Spell m_buttons[SpellCount];
@@ -98,3 +99,6 @@ protected:
 
     bool m_started = false;
 };
+
+ENUM_ALLOW_PROMOTION(Page_Encounter_Golem::Spell);
+ENUM_ALLOW_PROMOTION(Page_Encounter_Golem::Phase);

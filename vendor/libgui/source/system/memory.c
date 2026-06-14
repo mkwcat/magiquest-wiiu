@@ -18,7 +18,7 @@
 #include <coreinit/memexpheap.h>
 #include <coreinit/memfrmheap.h>
 #include <coreinit/memheap.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define MEMORY_ARENA_1         0
@@ -157,7 +157,7 @@ void *__wrap__realloc_r(struct _reent *r, void *p, size_t size)
 //! some wrappers
 //!-------------------------------------------------------------------------------------------
 void *MEM2_alloc(uint32_t size, uint32_t align) {
-    return memalign(align, size);
+    return aligned_alloc(align, size);
 }
 
 void MEM2_free(void *ptr) {

@@ -9,6 +9,7 @@
 #include <coreinit/time.h>
 #include <gctypes.h>
 #include <stdlib.h>
+#include <type_traits>
 
 #define CONF_LOG_VERBOSE 1
 #define CONF_LOG_MASK 0xFFFFFFFF
@@ -43,12 +44,17 @@ enum LogSource {
           _DO_PRINT(__FILE__, __LINE__, __VA_ARGS__);                                              \
           abort();                                                                                 \
       } while (0)
-
 #else // LOG_MASK != 0
 #  define LOG(source, ...)
 #  define LOG_VERBOSE(source, ...)
 #  define PANIC(...) abort()
 #endif // LOG_MASK != 0
+
+#define ENUM_ALLOW_PROMOTION(X_TYPE)                                                               \
+    constexpr std::underlying_type_t<X_TYPE> operator+(X_TYPE a)                                   \
+    {                                                                                              \
+        return static_cast<std::underlying_type_t<X_TYPE>>(a);                                     \
+    }
 
 template <class T>
 constexpr T RoundUp(T num, unsigned int align)

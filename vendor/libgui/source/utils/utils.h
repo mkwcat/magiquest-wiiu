@@ -1,7 +1,7 @@
 #ifndef __UTILS_H_
 #define __UTILS_H_
 
-#include <malloc.h>
+#include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
