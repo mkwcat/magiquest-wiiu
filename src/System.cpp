@@ -394,9 +394,6 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    // Seed the random number generator
-    std::srand(OSGetTick());
-
     // Initialize GUI memory
     libgui_memoryInitialize();
 
